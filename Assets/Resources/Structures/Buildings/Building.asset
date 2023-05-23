@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 88bd49ce6d454818a6987dea94829967, type: 3}
+  m_Name: Building
+  m_EditorClassIdentifier: 
+  sprite: {fileID: 21300000, guid: 3825edf082fca1a4f831f26196f243d4, type: 3}
+  rotatable: 0
+  canBePlacedOn: 00000000
+  canBeBuiltOn: 0
+  afterDestruction: {fileID: 11400000, guid: 3ab664991a929474698e994a0d935c07, type: 2}
+  canBeDestroyedBy:
+  - {fileID: 11400000, guid: 7eee79d42a7a61a46a67f37f9a6b42cb, type: 2}
+  - {fileID: 11400000, guid: 452bb7712c07b574d9d8f787f24724bc, type: 2}
+  destructible: 1
+  health: 5
+  drivable: 0
+  canBeDrivenBy:
+  - {fileID: 11400000, guid: c8be3daf77016d644878991d3933a81b, type: 2}
+  settedLandType: 0
+  setLandType: 0
+  addedLandType: 0
+  addLandType: 0
+  movementCostSet: 1
+  movementCostAdd: 0
+  movementCostMultiply: 0
+  canShootThrough: 0
+  canHideInside: 1
+  canHideThere: {fileID: 11400000, guid: c8be3daf77016d644878991d3933a81b, type: 2}

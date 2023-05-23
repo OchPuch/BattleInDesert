@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 88bd49ce6d454818a6987dea94829967, type: 3}
+  m_Name: Airport_Center
+  m_EditorClassIdentifier: 
+  sprite: {fileID: 21300000, guid: fe76fe0370ff29240ad256373921c1d0, type: 3}
+  rotatable: 0
+  canBePlacedOn: 00000000
+  canBeBuiltOn: 0
+  afterDestruction: {fileID: 0}
+  canBeDestroyedBy: []
+  destructible: 0
+  health: 0
+  drivable: 1
+  canBeDrivenBy: []
+  settedLandType: 0
+  setLandType: 0
+  addedLandType: 0
+  addLandType: 0
+  movementCostSet: 0
+  movementCostAdd: 0
+  movementCostMultiply: 0
+  canShootThrough: 0
+  canHideInside: 0
+  canHideThere: {fileID: 0}
