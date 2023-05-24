@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Interfaces;
 using Managers;
 using Mirror;
+using Multiplayer;
 using ScriptableObjects;
 using UnityEngine;
 using UnityEngine.Serialization;

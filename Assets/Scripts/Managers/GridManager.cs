@@ -10,7 +10,7 @@ using Utils;
 
 namespace Managers
 {
-    public class GridManager : MonoBehaviour
+    public class GridManager : NetworkBehaviour
     {
         public static GridManager Instance;
         public Vector2Int gridSize;
@@ -58,13 +58,12 @@ namespace Managers
         void Start()
         {
             _camera = Camera.main;
-            
-            
-            if (NetworkServer.active)
-            {
-                GenerateGrid();
-            }
-           
+        }
+        
+        public override void OnStartServer()
+        {
+            base.OnStartServer();
+            GenerateGridFromJson();
         }
 
         private void GenerateGridFromJson()

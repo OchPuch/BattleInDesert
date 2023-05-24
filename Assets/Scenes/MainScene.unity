@@ -1135,14 +1135,14 @@ MonoBehaviour:
   autoStartServerBuild: 1
   autoConnectClientBuild: 0
   sendRate: 30
-  offlineScene: 
-  onlineScene: 
+  offlineScene: Assets/Scenes/MainMenu.unity
+  onlineScene: Assets/Scenes/MainScene.unity
   transport: {fileID: 0}
   networkAddress: localhost
   maxConnections: 100
   authenticator: {fileID: 0}
   playerPrefab: {fileID: 0}
-  autoCreatePlayer: 1
+  autoCreatePlayer: 0
   playerSpawnMethod: 0
   spawnPrefabs: []
   timeInterpolationGui: 0
@@ -1375,6 +1375,10 @@ PrefabInstance:
     - target: {fileID: 4676658189182682351, guid: 6a7248a234a33fc488afe9ad66d0ae62, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8447498072964997017, guid: 6a7248a234a33fc488afe9ad66d0ae62, type: 3}
+      propertyPath: sceneId
+      value: 4015010827
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 6a7248a234a33fc488afe9ad66d0ae62, type: 3}

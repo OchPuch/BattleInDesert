@@ -1,4 +1,5 @@
 using Managers;
+using Multiplayer;
 using TMPro;
 using UnityEngine;
 
@@ -7,12 +8,12 @@ namespace UI
     public class GameStateUI : MonoBehaviour
     {
         private TextMeshProUGUI _text;
-        private GameManager _gameManager;
+        private NetworkGameManager _gameManager;
         
         void Start()
         {
             _text = GetComponent<TextMeshProUGUI>();
-            _gameManager = GameManager.Instance;
+            _gameManager = NetworkGameManager.Instance;
         }
 
         
