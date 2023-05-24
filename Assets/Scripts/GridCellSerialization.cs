@@ -26,7 +26,7 @@ public class GridCellSerialization
         gridPositionY = gridCell.gridPosition.y;
         structureRotationTimes =
             gridCell.attachedStructure != null ? gridCell.attachedStructure.gameObject.transform.eulerAngles.z  : 0;
-        landScapeCellPath = gridCell.landScapeCell.path;
+        landScapeCellPath = gridCell.landScapeCellSprites.path;
         landStructurePath = gridCell.attachedStructure
             ? gridCell.attachedStructure.landStructure.path
             : "";
@@ -36,7 +36,7 @@ public class GridCellSerialization
     {
         GridManager = GameObject.Find("GridManager").GetComponent<GridManager>();
         GridManager.GridGenerated += CreateStructure;
-        if (GridManager.GridCells.Count == GridManager.GridBoundX * GridManager.GridBoundY)
+        if (GridManager.gridCells.Count == GridManager.GridBoundX * GridManager.GridBoundY)
         {
             Debug.Log("Grid is full");
             return null;
@@ -46,14 +46,14 @@ public class GridCellSerialization
         cell.AddComponent<SpriteRenderer>();
         var gridCell = cell.AddComponent<GridCell>();
         gridCell.gridPosition = new Vector2Int(gridPositionX, gridPositionY);
-        gridCell.landScapeCell = Resources.Load<LandScapeCell>(landScapeCellPath);
+        gridCell.landScapeCellSprites = Resources.Load<LandScapeCellSprites>(landScapeCellPath);
         gridCell.transform.parent = GridManager.transform;
         return gridCell;
     }
 
     public void CreateStructure()
     {
-        var gridLandscape  = Resources.Load<LandScapeCell>(landScapeCellPath);
+        var gridLandscape  = Resources.Load<LandScapeCellSprites>(landScapeCellPath);
         
         if (landStructurePath == "")
         {

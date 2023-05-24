@@ -91,22 +91,7 @@ public class GridEditor : MonoBehaviour
             return;
         }
         
-        var gridCells = GridManager.GridCells;
-        
-        if (gridCells.Count == 0)
-        {
-            Debug.Log("No grid to save");
-            return;
-        }
-
-        var serializedGridCells = new GridCellSerialization[gridCells.Count];
-
-        for(int i = 0; i < gridCells.Count; i++)
-        {
-            serializedGridCells[i] = new GridCellSerialization(gridCells[i]);
-        }
-
-        var json = JsonHelper.ToJson(serializedGridCells, false);
+        var json = GridManager.MapToJson(GridManager.gridCells);
         
         //Save to file
         System.IO.File.WriteAllText(path, json);
@@ -139,14 +124,14 @@ public class GridEditor : MonoBehaviour
         }
         
         //If grid already exists destroy it
-        if (GridManager.GridCells.Count > 0)
+        if (GridManager.gridCells.Count > 0)
         {
             DestroyGrid();
         }
         
         foreach (var serializedGridCell in serializedGridCells)
         {
-            if (GridManager.GridCells.Count() == GridManager.GridBoundX * GridManager.GridBoundY)
+            if (GridManager.gridCells.Count() == GridManager.GridBoundX * GridManager.GridBoundY)
             {
                 Debug.Log("Grid is full");
                 break;
@@ -184,19 +169,19 @@ public class GridEditor : MonoBehaviour
         }
         
         //If grid already exists destroy it
-        if (GridManager.GridCells.Count > 0)
+        if (GridManager.gridCells.Count > 0)
         {
             DestroyGrid();
         }
         
         //Generate grid from mapSprite
-        GridManager.GenerateFromMap();
+        GridManager.GenerateFromImage();
 
     }
     
     public void DestroyGrid()
     {
-        var gridCells = GridManager.GridCells;
+        var gridCells = GridManager.gridCells;
         //destroy gameobjects
         foreach (var gridCell in gridCells)
         {

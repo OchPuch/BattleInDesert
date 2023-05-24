@@ -12,7 +12,7 @@ using UnityEngine.Serialization;
 [System.Serializable]
 public class GridCell : MonoBehaviour
 {
-    [SerializeField] public LandScapeCell landScapeCell;
+    [FormerlySerializedAs("landScapeCell")] [SerializeField] public LandScapeCellSprites landScapeCellSprites;
 
     public Vector2Int gridPosition;
     public readonly GridCell[,] AdjacentCells = new GridCell[3, 3]; //Always check for nulls
@@ -22,7 +22,7 @@ public class GridCell : MonoBehaviour
 
     public bool Walkable = true;
 
-    public HashSet<LandScapeCell.LandType> landType = new HashSet<LandScapeCell.LandType>();
+    public HashSet<LandScapeCellSprites.LandType> landType = new HashSet<LandScapeCellSprites.LandType>();
 
     public float movementCost = 1f;
 
@@ -60,16 +60,16 @@ public class GridCell : MonoBehaviour
     private void Start()
     {
         
-        if (!landScapeCell) {
+        if (!landScapeCellSprites) {
             Destroy(gameObject);
             return;
         }
 
         
         SetPositionByGridCoordinates();
-        movementCost = landScapeCell.movementCost;
-        spriteRenderer.sprite = landScapeCell.sprite;
-        landType.Add(landScapeCell.landType);
+        movementCost = landScapeCellSprites.movementCost;
+        spriteRenderer.sprite = landScapeCellSprites.sprite;
+        landType.Add(landScapeCellSprites.landType);
     }
 
     private void SetPositionByGridCoordinates()
@@ -115,13 +115,13 @@ public class GridCell : MonoBehaviour
         {
             switch (land)
             {
-                case LandScapeCell.LandType.Water:
+                case LandScapeCellSprites.LandType.Water:
                     flag = walker.unit.canDriveWater;
                     break;
-                case LandScapeCell.LandType.Land:
+                case LandScapeCellSprites.LandType.Land:
                     flag = walker.unit.canDriveLand;
                     break;
-                case LandScapeCell.LandType.ShallowWater:
+                case LandScapeCellSprites.LandType.ShallowWater:
                     flag = walker.unit.canDriveShallowWater;
                     break;
             }
@@ -220,9 +220,9 @@ public class GridCell : MonoBehaviour
     public void RefreshLand()
     {
         landType.Clear();
-        landType.Add(landScapeCell.landType);
+        landType.Add(landScapeCellSprites.landType);
         Walkable = true;
-        movementCost = landScapeCell.movementCost;
+        movementCost = landScapeCellSprites.movementCost;
         
     }
     

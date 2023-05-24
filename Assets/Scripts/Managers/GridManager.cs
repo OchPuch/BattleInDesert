@@ -21,13 +21,13 @@ namespace Managers
         [SerializeField]
         public const int GridBoundY = 256;
 
-        [SerializeField] private LandScapeCell[] landScapeCells;
-        Dictionary<LandScapeCell, Color> _avgLandScapeCellColors = new Dictionary<LandScapeCell, Color>();
+        [SerializeField] private LandScapeCellSprites[] landScapeCells;
+        Dictionary<LandScapeCellSprites, Color> _avgLandScapeCellColors = new Dictionary<LandScapeCellSprites, Color>();
          public Texture2D mapTexture;
          public string mapPath;
 
-        public List<GridCell> GridCells = new List<GridCell>();
-        public List<GridCell> LightUpCells = new List<GridCell>();
+        public List<GridCell> gridCells = new List<GridCell>();
+        public List<GridCell> lightUpCells = new List<GridCell>();
         public static event Action GridGenerated;
 
         private Camera _camera;
@@ -59,7 +59,12 @@ namespace Managers
         {
             _camera = Camera.main;
             
-            GenerateGridFromJson();
+            
+            if (NetworkServer.active)
+            {
+                GenerateGrid();
+            }
+           
         }
 
         private void GenerateGridFromJson()
@@ -70,10 +75,14 @@ namespace Managers
                 mapPath = OpenFileHelper.GetPathToLoadJsonFile();
             }
             
-            
             //Load from file
             string json = System.IO.File.ReadAllText(mapPath);
         
+            GenerateGridFromJson(json);
+        }
+
+        public void GenerateGridFromJson(string json)
+        {
             //Deserialize JSON to grid
             var serializedGridCells = JsonHelper.FromJson<GridCellSerialization>(json);
         
@@ -85,7 +94,7 @@ namespace Managers
             
             foreach (var serializedGridCell in serializedGridCells)
             {
-                if (GridCells.Count() == GridBoundX * GridBoundY)
+                if (gridCells.Count() == GridBoundX * GridBoundY)
                 {
                     Debug.Log("Grid is full");
                     break;
@@ -94,6 +103,24 @@ namespace Managers
             }
         
             Instance.GridSuccessfullyGenerated();
+        }
+
+        public static string MapToJson(List<GridCell> mapCells)
+        {
+            if (mapCells.Count == 0)
+            {
+                Debug.Log("No grid to save");
+                return "";
+            }
+
+            var serializedGridCells = new GridCellSerialization[mapCells.Count];
+
+            for(int i = 0; i < mapCells.Count; i++)
+            {
+                serializedGridCells[i] = new GridCellSerialization(mapCells[i]);
+            }
+
+            return JsonHelper.ToJson(serializedGridCells, false);
         }
 
         public void GenerateGrid()
@@ -110,7 +137,7 @@ namespace Managers
             GridSuccessfullyGenerated();
         }
 
-        public void GenerateFromMap()
+        public void GenerateFromImage()
         {
             
             var map = Texture2DHelper.MakeTextureAppropriate(mapTexture, GridBoundX, GridBoundY, 18, 18,
@@ -157,7 +184,7 @@ namespace Managers
                     cell = new GameObject();
                     cell.transform.position = cellPosition;
                     cell.AddComponent<SpriteRenderer>();
-                    cell.AddComponent<GridCell>().landScapeCell = closestLandScape;
+                    cell.AddComponent<GridCell>().landScapeCellSprites = closestLandScape;
                     cell.transform.parent = transform;
                 }
             }
@@ -169,7 +196,15 @@ namespace Managers
         {
             GridGenerated?.Invoke();
         }
+        public void DestroyGrid()
+        {
+            foreach (var cell in gridCells)
+            {
+                Destroy(cell.gameObject);
+            }
 
+            gridCells.Clear();
+        }
         public HashSet<GridCell> GetArea(GridCell cell1, GridCell cell2)
         {
             var x1 = cell1.gridPosition.x;
@@ -196,23 +231,23 @@ namespace Managers
         {
             foreach (var gridCell in area)
             {
-                LightUpCells.Add(gridCell);
+                lightUpCells.Add(gridCell);
                 gridCell.LightUp();
             }
         }
         
         public  void LightDownArea()
         {
-            foreach (var gridCell in LightUpCells)
+            foreach (var gridCell in lightUpCells)
             {
                 gridCell.LightDown();
             }
-            LightUpCells.Clear();
+            lightUpCells.Clear();
         }
         
         private int UpdateLandScapeCells()
         {
-            landScapeCells =  Resources.LoadAll<LandScapeCell>("LandScape");
+            landScapeCells =  Resources.LoadAll<LandScapeCellSprites>("LandScape");
             return landScapeCells.Length;
         }
 
@@ -223,7 +258,7 @@ namespace Managers
                 return null;
             }
             
-            if (GridCells.Count == 0)
+            if (gridCells.Count == 0)
             {
                 return null;
             }
@@ -231,7 +266,7 @@ namespace Managers
             var point = _camera.ScreenToWorldPoint(Input.mousePosition);
             var x = Mathf.RoundToInt(point.x / CellSize.x);
             var y = Mathf.RoundToInt(point.y / CellSize.y);
-            if (x < 0 || x > GridCells.Last().gridPosition.x || y < 0 || y > GridCells.Last().gridPosition.y)
+            if (x < 0 || x > gridCells.Last().gridPosition.x || y < 0 || y > gridCells.Last().gridPosition.y)
             {
                 return null;
             }
@@ -242,12 +277,12 @@ namespace Managers
         public void AddTile(GameObject tile)
         {
             var gridCell = tile.GetComponent<GridCell>();
-            GridCells.Add(gridCell);
+            gridCells.Add(gridCell);
         }
 
         public GridCell GetGridCell(Vector2Int gridPosition)
         {
-            return GridCells.Find(cell => cell.gridPosition == gridPosition);
+            return gridCells.Find(cell => cell.gridPosition == gridPosition);
         }
 
         public static Vector2Int PositionToGridPosition(Vector2 position)
@@ -266,12 +301,12 @@ namespace Managers
 
         public Vector2Int GetLeftDownBorder()
         {   
-             return GridCells.First().gridPosition;
+             return gridCells.First().gridPosition;
         }
         
         public Vector2Int GetRightUpBorder()
         {
-            return GridCells.Last().gridPosition;
+            return gridCells.Last().gridPosition;
         }
     }
     

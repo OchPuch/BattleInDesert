@@ -11,7 +11,7 @@ namespace ScriptableObjects
         [Header("General")]
         public Sprite sprite;
         public bool rotatable; //Editor
-        public LandScapeCell.LandType[] canBePlacedOn; //Editor
+        public LandScapeCellSprites.LandType[] canBePlacedOn; //Editor
         public bool canBeBuiltOn; //Editor
         [Header("Destruction")]
         public LandStructure afterDestruction;
@@ -22,9 +22,9 @@ namespace ScriptableObjects
         public bool drivable;
         public Unit[] canBeDrivenBy; //If 0, can be driven by any unit
         public bool settedLandType;
-        public LandScapeCell.LandType setLandType;
+        public LandScapeCellSprites.LandType setLandType;
         public bool addedLandType;
-        public LandScapeCell.LandType addLandType;
+        public LandScapeCellSprites.LandType addLandType;
         public float movementCostSet;
         public float movementCostAdd;
         public float movementCostMultiply;

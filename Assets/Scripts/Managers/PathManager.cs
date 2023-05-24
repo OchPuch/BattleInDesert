@@ -34,7 +34,7 @@ namespace Managers
             var closedList = new List<GridCell>();
             openList.Add(start);
 
-            foreach (var cell in GridManager.Instance.GridCells)
+            foreach (var cell in GridManager.Instance.gridCells)
             {
                 cell.gCost = int.MaxValue;
                 cell.parent = null;

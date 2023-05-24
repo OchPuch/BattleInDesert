@@ -4,10 +4,10 @@ using UnityEngine;
 
 namespace Managers
 {
-    public class GameManager : NetworkBehaviour
+    public class GameManager : MonoBehaviour
     {
         
-        public GameManager Instance;
+        public static GameManager Instance;
 
         public GameState state;
     
