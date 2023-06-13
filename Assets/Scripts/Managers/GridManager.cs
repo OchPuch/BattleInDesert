@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Controllers;
 using Mirror;
+using Multiplayer;
 using ScriptableObjects;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -10,7 +11,7 @@ using Utils;
 
 namespace Managers
 {
-    public class GridManager : NetworkBehaviour
+    public class GridManager : MonoBehaviour
     {
         public static GridManager Instance;
         public Vector2Int gridSize;
@@ -52,7 +53,10 @@ namespace Managers
             {
                 _avgLandScapeCellColors.Add(landScapeCell, Texture2DHelper.AverageColorWithoutOutliers(landScapeCell.sprite.texture.GetRawTextureData()));
             }
+            
         }
+
+        
 
 
         void Start()
@@ -60,17 +64,14 @@ namespace Managers
             _camera = Camera.main;
         }
         
-        public override void OnStartServer()
-        {
-            base.OnStartServer();
-            GenerateGridFromJson();
-        }
+        
 
-        private void GenerateGridFromJson()
+        public void GenerateGridFromJson()
         {
             
             if (mapPath == "")
             {
+                NetworkGameManager.Instance.UpdateState(GameState.ChoosingMap);
                 mapPath = OpenFileHelper.GetPathToLoadJsonFile();
             }
             
@@ -83,6 +84,8 @@ namespace Managers
         public void GenerateGridFromJson(string json)
         {
             //Deserialize JSON to grid
+            NetworkGameManager.Instance.UpdateState(GameState.GeneratingMap);
+
             var serializedGridCells = JsonHelper.FromJson<GridCellSerialization>(json);
         
             if (serializedGridCells.Length == 0)

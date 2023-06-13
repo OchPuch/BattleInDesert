@@ -15,8 +15,7 @@ namespace Multiplayer
         public static event Action<GameState> OnGameStateChanged;
 
         
-        
-        public void Awake()
+        public new void Awake()
         {
             if (!Instance)
             {
@@ -28,7 +27,15 @@ namespace Multiplayer
             }
             
             GridManager.GridGenerated += OnGridGenerated;
-            UpdateState(GameState.ChoosingMap);
+            NetworkServer.RegisterHandler<MapDataMessage>(OnMapDataMessageReceived);
+            
+        }
+        
+        private void OnMapDataMessageReceived(NetworkConnection connection, MapDataMessage message)
+        {
+            // Вызываем метод OnMapDataReceived у соответствующего игрока
+            PlayerController player = connection.identity.GetComponent<PlayerController>();
+            player.OnMapDataReceived(message);
         }
         
         public static void SendMapToClient(NetworkConnection conn, List<GridCell> map)
@@ -44,21 +51,48 @@ namespace Multiplayer
             }
             
             string JsonMapData = GridManager.MapToJson(map);
-            MapDataMessage mapDataMessage = new MapDataMessage {
-                JsonMapData = JsonMapData
-            };
-            //Send
-            conn.Send(mapDataMessage);
+            
+            // пределение размера пакета (например, 32768 байт)
+            int packetSize = 32767;
+            int numPackets = Mathf.CeilToInt((float)JsonMapData.Length / packetSize);
+
+            // Разделение сообщения на пакеты и отправка их по одному
+            for (int i = 0; i < numPackets; i++)
+            {
+                string packetData = JsonMapData.Substring(i * packetSize, Mathf.Min(packetSize, JsonMapData.Length - i * packetSize));
+
+                MapDataMessage packet = new MapDataMessage
+                {
+                    PacketIndex = i,
+                    NumPackets = numPackets,
+                    PacketData = packetData
+                };
+
+                conn.Send(packet);
+            }
+
+            Debug.Log("Sent map to client");
         }
         
         public override void OnServerAddPlayer(NetworkConnectionToClient conn)
         {
             base.OnServerAddPlayer(conn);
-            Debug.LogError("Bruh");
-            SendMapToClient(conn, GridManager.Instance.gridCells);
-           
+            Debug.LogError("Bruh"); 
+            
+            if (conn.identity.isLocalPlayer)
+            {
+                Debug.Log("Host joined");
+                GridManager.Instance.GenerateGridFromJson();
+            }
+            else
+            {
+                Debug.Log("Client joined");
+                SendMapToClient(conn, GridManager.Instance.gridCells);
+            }
+            
+
         }
-        
+
         public void LockRoom()
         {
             this.maxConnections = 1;
@@ -82,6 +116,8 @@ namespace Multiplayer
             switch (newState)
             {
                 case GameState.ChoosingMap:
+                    break;
+                case GameState.GeneratingMap:
                     break;
                 case GameState.WaitingForPlayers:
                     break;
@@ -110,6 +146,7 @@ namespace Multiplayer
     public enum GameState
     {
         ChoosingMap,
+        GeneratingMap,
         WaitingForPlayers,
         SettingUp,
         Player1Turn,

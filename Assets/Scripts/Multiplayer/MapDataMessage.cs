@@ -4,6 +4,8 @@ namespace Multiplayer
 {
     public struct MapDataMessage : NetworkMessage
     {
-        public string JsonMapData;
+        public int PacketIndex;
+        public int NumPackets;
+        public string PacketData;
     }
 }

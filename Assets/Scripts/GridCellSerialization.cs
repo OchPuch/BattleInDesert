@@ -16,10 +16,7 @@ public class GridCellSerialization
     public String landScapeCellPath;
     public String landStructurePath;
     public float structureRotationTimes;
-
-    private GridManager GridManager;
-
-
+    
     public GridCellSerialization(GridCell gridCell)
     {
         gridPositionX = gridCell.gridPosition.x;
@@ -34,9 +31,9 @@ public class GridCellSerialization
 
     public GridCell CreateGridCell()
     {
-        GridManager = GameObject.Find("GridManager").GetComponent<GridManager>();
+        
         GridManager.GridGenerated += CreateStructure;
-        if (GridManager.gridCells.Count == GridManager.GridBoundX * GridManager.GridBoundY)
+        if (GridManager.Instance.gridCells.Count == GridManager.GridBoundX * GridManager.GridBoundY)
         {
             Debug.Log("Grid is full");
             return null;
@@ -47,7 +44,7 @@ public class GridCellSerialization
         var gridCell = cell.AddComponent<GridCell>();
         gridCell.gridPosition = new Vector2Int(gridPositionX, gridPositionY);
         gridCell.landScapeCellSprites = Resources.Load<LandScapeCellSprites>(landScapeCellPath);
-        gridCell.transform.parent = GridManager.transform;
+        gridCell.transform.parent = GridManager.Instance.transform;
         return gridCell;
     }
 
@@ -74,7 +71,7 @@ public class GridCellSerialization
         spriteRenderer.sortingOrder = 1;
         var structureScript = newStructure.AddComponent<StructureScript>();
         structureScript.landStructure = structure;
-        structureScript.parentGridCell = GridManager.GetGridCell(new Vector2Int (gridPositionX, gridPositionY));
+        structureScript.parentGridCell = GridManager.Instance.GetGridCell(new Vector2Int (gridPositionX, gridPositionY));
         var transform1 = structureScript.parentGridCell.transform;
         newStructure.transform.position = transform1.position;
         if (structure.rotatable)

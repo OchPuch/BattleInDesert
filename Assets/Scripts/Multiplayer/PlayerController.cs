@@ -1,17 +1,43 @@
 ﻿using Managers;
 using Mirror;
+using UnityEngine;
 
 namespace Multiplayer
 {
     public class PlayerController : NetworkBehaviour
     {
-        public void OnMapDataReceived(MapDataMessage mapDataMessage)
+        
+        private string _receivedMapData;
+        private int _numPacketsReceived;
+        
+        
+        public void OnMapDataReceived(MapDataMessage message)
         {
             //if player is not host
-            if (!isServer)
+            Debug.Log ("Received map data");
+            
+            // Добавляем полученные данные к собранному сообщению
+            if (_receivedMapData == null)
             {
-                GridManager.Instance.GenerateGridFromJson(mapDataMessage.JsonMapData);
+                _receivedMapData = message.PacketData;
+                _numPacketsReceived = 1;
             }
+            else
+            {
+                _receivedMapData += message.PacketData;
+                _numPacketsReceived++;
+            }
+
+            // Проверяем, является ли текущий пакет последним
+            if (_numPacketsReceived == message.NumPackets - 1)
+            {
+                // Полное сообщение было собрано, вызываем метод для обработки
+                GridManager.Instance.GenerateGridFromJson(_receivedMapData);
+                _receivedMapData = null;
+                _numPacketsReceived = 0;
+            }
+            
+            
         }
     }
 }
