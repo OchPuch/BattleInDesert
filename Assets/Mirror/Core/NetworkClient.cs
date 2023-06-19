@@ -59,10 +59,6 @@ namespace Mirror
         // NetworkClient state
         internal static ConnectState connectState = ConnectState.None;
 
-        /// <summary>IP address of the connection to server.</summary>
-        // empty if the client has not connected yet.
-        public static string serverIp => connection.address;
-
         /// <summary>active is true while a client is connecting/connected either as standalone or as host client.</summary>
         // (= while the network is active)
         public static bool active => connectState == ConnectState.Connecting ||
@@ -115,7 +111,7 @@ namespace Mirror
 
         // interest management component (optional)
         // only needed for SetHostVisibility
-        public static InterestManagement aoi;
+        public static InterestManagementBase aoi;
 
         // scene loading
         public static bool isLoadingScene;
@@ -471,7 +467,7 @@ namespace Mirror
         public static void RegisterHandler<T>(Action<T> handler, bool requireAuthentication = true)
             where T : struct, NetworkMessage
         {
-            ushort msgType = NetworkMessages.GetId<T>();
+            ushort msgType = NetworkMessageId<T>.Id;
             if (handlers.ContainsKey(msgType))
             {
                 Debug.LogWarning($"NetworkClient.RegisterHandler replacing handler for {typeof(T).FullName}, id={msgType}. If replacement is intentional, use ReplaceHandler instead to avoid this warning.");
@@ -490,7 +486,7 @@ namespace Mirror
         public static void ReplaceHandler<T>(Action<NetworkConnection, T> handler, bool requireAuthentication = true)
             where T : struct, NetworkMessage
         {
-            ushort msgType = NetworkMessages.GetId<T>();
+            ushort msgType = NetworkMessageId<T>.Id;
             handlers[msgType] = NetworkMessages.WrapHandler(handler, requireAuthentication);
         }
 
@@ -508,7 +504,7 @@ namespace Mirror
             where T : struct, NetworkMessage
         {
             // use int to minimize collisions
-            ushort msgType = NetworkMessages.GetId<T>();
+            ushort msgType = NetworkMessageId<T>.Id;
             return handlers.Remove(msgType);
         }
 
@@ -538,6 +534,9 @@ namespace Mirror
                 return;
             }
 
+            // disallow child NetworkIdentities.
+            // TODO likely not necessary anymore due to the new check in
+            // NetworkIdentity.OnValidate.
             NetworkIdentity[] identities = prefab.GetComponentsInChildren<NetworkIdentity>();
             if (identities.Length > 1)
             {
@@ -1480,12 +1479,6 @@ namespace Mirror
         internal static void NetworkLateUpdate()
         {
             // broadcast ClientToServer components while active
-            // note that Broadcast() runs every update.
-            // on clients with 120 Hz, this will run 120 times per second.
-            // however, Broadcast only checks .owned, which usually aren't many.
-            //
-            // we could use a .sendInterval, but it would also put a minimum
-            // limit to every component's sendInterval automatically.
             if (active)
             {
                 // broadcast every sendInterval.
@@ -1702,7 +1695,7 @@ namespace Mirror
             // only if in world
             if (!ready) return;
 
-            GUILayout.BeginArea(new Rect(10, 5, 500, 50));
+            GUILayout.BeginArea(new Rect(10, 5, 800, 50));
 
             GUILayout.BeginHorizontal("Box");
             GUILayout.Label("Snapshot Interp.:");
@@ -1712,8 +1705,11 @@ namespace Mirror
             else GUI.color = Color.white;
             GUILayout.Box($"timeline: {localTimeline:F2}");
             GUILayout.Box($"buffer: {snapshots.Count}");
+            GUILayout.Box($"DriftEMA: {NetworkClient.driftEma.Value:F2}");
+            GUILayout.Box($"DelTimeEMA: {NetworkClient.deliveryTimeEma.Value:F2}");
             GUILayout.Box($"timescale: {localTimescale:F2}");
-            GUILayout.Box($"BTM: {bufferTimeMultiplier:F2}");
+            GUILayout.Box($"BTM: {snapshotSettings.bufferTimeMultiplier:F2}");
+            GUILayout.Box($"RTT: {NetworkTime.rtt * 1000:000}");
             GUILayout.EndHorizontal();
 
             GUILayout.EndArea();

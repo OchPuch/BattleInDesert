@@ -21,23 +21,16 @@ namespace Multiplayer
             {
                 Instance = this;
             }
-            else
+            else if (Instance != this)
             {
                 Destroy(gameObject);
             }
             
             GridManager.GridGenerated += OnGridGenerated;
-            NetworkServer.RegisterHandler<MapDataMessage>(OnMapDataMessageReceived);
+            
             
         }
-        
-        private void OnMapDataMessageReceived(NetworkConnection connection, MapDataMessage message)
-        {
-            // Вызываем метод OnMapDataReceived у соответствующего игрока
-            PlayerController player = connection.identity.GetComponent<PlayerController>();
-            player.OnMapDataReceived(message);
-        }
-        
+
         public static void SendMapToClient(NetworkConnection conn, List<GridCell> map)
         {
             if (map.Count == 0)
@@ -56,6 +49,9 @@ namespace Multiplayer
             int packetSize = 32767;
             int numPackets = Mathf.CeilToInt((float)JsonMapData.Length / packetSize);
 
+            Debug.Log(numPackets + "sended");
+            
+            
             // Разделение сообщения на пакеты и отправка их по одному
             for (int i = 0; i < numPackets; i++)
             {

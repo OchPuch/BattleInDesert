@@ -19,8 +19,8 @@ namespace Mirror
     public enum SyncDirection { ServerToClient, ClientToServer }
 
     /// <summary>Base class for networked components.</summary>
+    // [RequireComponent(typeof(NetworkIdentity))] disabled to allow child NetworkBehaviours
     [AddComponentMenu("")]
-    [RequireComponent(typeof(NetworkIdentity))]
     [HelpURL("https://mirror-networking.gitbook.io/docs/guides/networkbehaviour")]
     public abstract class NetworkBehaviour : MonoBehaviour
     {
@@ -36,9 +36,14 @@ namespace Mirror
         /// <summary>sync interval for OnSerialize (in seconds)</summary>
         // hidden because NetworkBehaviourInspector shows it only if has OnSerialize.
         // [0,2] should be enough. anything >2s is too laggy anyway.
+        //
+        // NetworkServer & NetworkClient broadcast() are behind a sendInterval timer now.
+        // it makes sense to keep every component's syncInterval setting at '0' by default.
+        // otherwise, the overlapping timers could introduce unexpected latency.
+        // careful: default of '0.1' may
         [Tooltip("Time in seconds until next change is synchronized to the client. '0' means send immediately if changed. '0.5' means only send changes every 500ms.\n(This is for state synchronization like SyncVars, SyncLists, OnSerialize. Not for Cmds, Rpcs, etc.)")]
         [Range(0, 2)]
-        [HideInInspector] public float syncInterval = 0.1f;
+        [HideInInspector] public float syncInterval = 0;
         internal double lastSyncTime;
 
         /// <summary>True if this object is on the server and has been spawned.</summary>
@@ -185,7 +190,7 @@ namespace Mirror
             // only check time if bits were dirty. this is more expensive.
             NetworkTime.localTime - lastSyncTime >= syncInterval;
 
-        /// <summary>Clears all the dirty bits that were set by SetDirtyBits()</summary>
+        /// <summary>Clears all the dirty bits that were set by SetSyncVarDirtyBit() (formally SetDirtyBits)</summary>
         // automatically invoked when an update is sent for this object, but can
         // be called manually as well.
         public void ClearAllDirtyBits()
@@ -288,15 +293,36 @@ namespace Mirror
             };
         }
 
+        protected virtual void OnValidate()
+        {
+            // we now allow child NetworkBehaviours.
+            // we can not [RequireComponent(typeof(NetworkIdentity))] anymore.
+            // instead, we need to ensure a NetworkIdentity is somewhere in the
+            // parents.
+            // only run this in Editor. don't add more runtime overhead.
+
+#if UNITY_EDITOR
+            if (GetComponent<NetworkIdentity>() == null &&
+#if UNITY_2020_3_OR_NEWER
+                GetComponentInParent<NetworkIdentity>(true) == null)
+#else
+                GetComponentInParent<NetworkIdentity>() == null)
+#endif
+            {
+                Debug.LogError($"{GetType()} on {name} requires a NetworkIdentity. Please add a NetworkIdentity component to {name} or it's parents.");
+            }
+#endif
+        }
+
         // pass full function name to avoid ClassA.Func <-> ClassB.Func collisions
-        protected void SendCommandInternal(string functionFullName, NetworkWriter writer, int channelId, bool requiresAuthority = true)
+        protected void SendCommandInternal(string functionFullName, int functionHashCode, NetworkWriter writer, int channelId, bool requiresAuthority = true)
         {
             // this was in Weaver before
             // NOTE: we could remove this later to allow calling Cmds on Server
             //       to avoid Wrapper functions. a lot of people requested this.
             if (!NetworkClient.active)
             {
-                Debug.LogError($"Command Function {functionFullName} called on {name} without an active client.", gameObject);
+                Debug.LogError($"Command {functionFullName} called on {name} without an active client.", gameObject);
                 return;
             }
 
@@ -308,14 +334,15 @@ namespace Mirror
                 // or client may have been set NotReady intentionally, so
                 // only warn if on the reliable channel.
                 if (channelId == Channels.Reliable)
-                    Debug.LogWarning($"Command Function {functionFullName} called on {name} while NetworkClient is not ready.\nThis may be ignored if client intentionally set NotReady.", gameObject);
+                    Debug.LogWarning($"Command {functionFullName} called on {name} while NetworkClient is not ready.\nThis may be ignored if client intentionally set NotReady.", gameObject);
                 return;
             }
 
-            // local players can always send commands, regardless of authority, other objects must have authority.
+            // local players can always send commands, regardless of authority,
+            // other objects must have authority.
             if (!(!requiresAuthority || isLocalPlayer || isOwned))
             {
-                Debug.LogWarning($"Command Function {functionFullName} called on {name} without authority.", gameObject);
+                Debug.LogWarning($"Command {functionFullName} called on {name} without authority.", gameObject);
                 return;
             }
 
@@ -326,7 +353,7 @@ namespace Mirror
             // => see also: https://github.com/vis2k/Mirror/issues/2629
             if (NetworkClient.connection == null)
             {
-                Debug.LogError($"Command Function {functionFullName} called on {name} with no client running.", gameObject);
+                Debug.LogError($"Command {functionFullName} called on {name} with no client running.", gameObject);
                 return;
             }
 
@@ -336,7 +363,7 @@ namespace Mirror
                 netId = netId,
                 componentIndex = ComponentIndex,
                 // type+func so Inventory.RpcUse != Equipment.RpcUse
-                functionHash = (ushort)functionFullName.GetStableHashCode(),
+                functionHash = (ushort)functionHashCode,
                 // segment to avoid reader allocations
                 payload = writer.ToArraySegment()
             };
@@ -352,12 +379,12 @@ namespace Mirror
         }
 
         // pass full function name to avoid ClassA.Func <-> ClassB.Func collisions
-        protected void SendRPCInternal(string functionFullName, NetworkWriter writer, int channelId, bool includeOwner)
+        protected void SendRPCInternal(string functionFullName, int functionHashCode, NetworkWriter writer, int channelId, bool includeOwner)
         {
             // this was in Weaver before
             if (!NetworkServer.active)
             {
-                Debug.LogError($"RPC Function {functionFullName} called on Client.", gameObject);
+                Debug.LogError($"RPC Function {functionFullName} called without an active server.", gameObject);
                 return;
             }
 
@@ -374,7 +401,7 @@ namespace Mirror
                 netId = netId,
                 componentIndex = ComponentIndex,
                 // type+func so Inventory.RpcUse != Equipment.RpcUse
-                functionHash = (ushort)functionFullName.GetStableHashCode(),
+                functionHash = (ushort)functionHashCode,
                 // segment to avoid reader allocations
                 payload = writer.ToArraySegment()
             };
@@ -384,28 +411,28 @@ namespace Mirror
             // NetworkServer.SendToReadyObservers(netIdentity, message, includeOwner, channelId);
 
             // safety check used to be in SendToReadyObservers. keep it for now.
-            if (netIdentity.observers != null && netIdentity.observers.Count > 0)
-            {
-                // serialize the message only once
-                using (NetworkWriterPooled serialized = NetworkWriterPool.Get())
-                {
-                    serialized.Write(message);
+            if (netIdentity.observers == null || netIdentity.observers.Count == 0)
+                return;
 
-                    // add to every observer's connection's rpc buffer
-                    foreach (NetworkConnectionToClient conn in netIdentity.observers.Values)
+            // serialize the message only once
+            using (NetworkWriterPooled serialized = NetworkWriterPool.Get())
+            {
+                serialized.Write(message);
+
+                // add to every observer's connection's rpc buffer
+                foreach (NetworkConnectionToClient conn in netIdentity.observers.Values)
+                {
+                    bool isOwner = conn == netIdentity.connectionToClient;
+                    if ((!isOwner || includeOwner) && conn.isReady)
                     {
-                        bool isOwner = conn == netIdentity.connectionToClient;
-                        if ((!isOwner || includeOwner) && conn.isReady)
-                        {
-                            conn.BufferRpc(message, channelId);
-                        }
+                        conn.BufferRpc(message, channelId);
                     }
                 }
             }
         }
 
         // pass full function name to avoid ClassA.Func <-> ClassB.Func collisions
-        protected void SendTargetRPCInternal(NetworkConnection conn, string functionFullName, NetworkWriter writer, int channelId)
+        protected void SendTargetRPCInternal(NetworkConnection conn, string functionFullName, int functionHashCode, NetworkWriter writer, int channelId)
         {
             if (!NetworkServer.active)
             {
@@ -445,7 +472,7 @@ namespace Mirror
                 netId = netId,
                 componentIndex = ComponentIndex,
                 // type+func so Inventory.RpcUse != Equipment.RpcUse
-                functionHash = (ushort)functionFullName.GetStableHashCode(),
+                functionHash = (ushort)functionHashCode,
                 // segment to avoid reader allocations
                 payload = writer.ToArraySegment()
             };
@@ -643,7 +670,9 @@ namespace Mirror
         protected GameObject GetSyncVarGameObject(uint netId, ref GameObject gameObjectField)
         {
             // server always uses the field
-            if (isServer)
+            // if neither, fallback to original field
+            // fixes: https://github.com/MirrorNetworking/Mirror/issues/3447
+            if (isServer || !isClient)
             {
                 return gameObjectField;
             }
@@ -951,7 +980,9 @@ namespace Mirror
         protected NetworkIdentity GetSyncVarNetworkIdentity(uint netId, ref NetworkIdentity identityField)
         {
             // server always uses the field
-            if (isServer)
+            // if neither, fallback to original field
+            // fixes: https://github.com/MirrorNetworking/Mirror/issues/3447
+            if (isServer || !isClient)
             {
                 return identityField;
             }
@@ -1014,7 +1045,9 @@ namespace Mirror
         protected T GetSyncVarNetworkBehaviour<T>(NetworkBehaviourSyncVar syncNetBehaviour, ref T behaviourField) where T : NetworkBehaviour
         {
             // server always uses the field
-            if (isServer)
+            // if neither, fallback to original field
+            // fixes: https://github.com/MirrorNetworking/Mirror/issues/3447
+            if (isServer || !isClient)
             {
                 return behaviourField;
             }

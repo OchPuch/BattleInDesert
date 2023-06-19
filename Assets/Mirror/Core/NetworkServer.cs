@@ -68,7 +68,7 @@ namespace Mirror
 
         // interest management component (optional)
         // by default, everyone observes everyone
-        public static InterestManagement aoi;
+        public static InterestManagementBase aoi;
 
         // OnConnected / OnDisconnected used to be NetworkMessages that were
         // invoked. this introduced a bug where external clients could send
@@ -189,7 +189,6 @@ namespace Mirror
             connections.Clear();
             connectionsCopy.Clear();
             handlers.Clear();
-            newObservers.Clear();
 
             // destroy all spawned objects, _then_ set inactive.
             // make sure .active is still true before calling this.
@@ -335,12 +334,12 @@ namespace Mirror
                         }
                     }
                 }
-                // an attacker may attempt to modify another connection's entity
+                // An attacker may attempt to modify another connection's entity
+                // This could also be a race condition of message in flight when
+                // RemoveClientAuthority is called, so not malicious.
+                // Don't disconnect, just log the warning.
                 else
-                {
-                    Debug.LogWarning($"Connection {connection.connectionId} attempted to modify {identity} which is not owned by the connection. Disconnecting the connection.");
-                    connection.Disconnect();
-                }
+                    Debug.LogWarning($"EntityStateMessage from {connection} for {identity} without authority.");
             }
             // no warning. don't spam server logs.
             // else Debug.LogWarning($"Did not find target for sync message for {message.netId} . Note: this can be completely normal because UDP messages may arrive out of order, so this message might have arrived after a Destroy message.");
@@ -360,12 +359,12 @@ namespace Mirror
             // maybe we shouldn't allow timeline to deviate more than a certain %.
             // for now, this is only used for client authority movement.
 
-#if !UNITY_2020_3_OR_NEWER
             // Unity 2019 doesn't have Time.timeAsDouble yet
+            //
+            // NetworkTime uses unscaled time and ignores Time.timeScale.
+            // fixes Time.timeScale getting server & client time out of sync:
+            // https://github.com/MirrorNetworking/Mirror/issues/3409
             connection.OnTimeSnapshot(new TimeSnapshot(connection.remoteTimeStamp, NetworkTime.localTime));
-#else
-            connection.OnTimeSnapshot(new TimeSnapshot(connection.remoteTimeStamp, Time.timeAsDouble));
-#endif
         }
 
         // connections /////////////////////////////////////////////////////////
@@ -772,7 +771,7 @@ namespace Mirror
         public static void RegisterHandler<T>(Action<NetworkConnectionToClient, T> handler, bool requireAuthentication = true)
             where T : struct, NetworkMessage
         {
-            ushort msgType = NetworkMessages.GetId<T>();
+            ushort msgType = NetworkMessageId<T>.Id;
             if (handlers.ContainsKey(msgType))
             {
                 Debug.LogWarning($"NetworkServer.RegisterHandler replacing handler for {typeof(T).FullName}, id={msgType}. If replacement is intentional, use ReplaceHandler instead to avoid this warning.");
@@ -785,7 +784,7 @@ namespace Mirror
         public static void RegisterHandler<T>(Action<NetworkConnectionToClient, T, int> handler, bool requireAuthentication = true)
             where T : struct, NetworkMessage
         {
-            ushort msgType = NetworkMessages.GetId<T>();
+            ushort msgType = NetworkMessageId<T>.Id;
             if (handlers.ContainsKey(msgType))
             {
                 Debug.LogWarning($"NetworkServer.RegisterHandler replacing handler for {typeof(T).FullName}, id={msgType}. If replacement is intentional, use ReplaceHandler instead to avoid this warning.");
@@ -804,7 +803,7 @@ namespace Mirror
         public static void ReplaceHandler<T>(Action<NetworkConnectionToClient, T> handler, bool requireAuthentication = true)
             where T : struct, NetworkMessage
         {
-            ushort msgType = NetworkMessages.GetId<T>();
+            ushort msgType = NetworkMessageId<T>.Id;
             handlers[msgType] = NetworkMessages.WrapHandler(handler, requireAuthentication);
         }
 
@@ -812,7 +811,7 @@ namespace Mirror
         public static void UnregisterHandler<T>()
             where T : struct, NetworkMessage
         {
-            ushort msgType = NetworkMessages.GetId<T>();
+            ushort msgType = NetworkMessageId<T>.Id;
             handlers.Remove(msgType);
         }
 
@@ -1531,14 +1530,10 @@ namespace Mirror
         }
 
         // interest management /////////////////////////////////////////////////
+
         // Helper function to add all server connections as observers.
         // This is used if none of the components provides their own
         // OnRebuildObservers function.
-        // allocate newObservers helper HashSet only once
-        // internal for tests
-        internal static readonly HashSet<NetworkConnectionToClient> newObservers =
-            new HashSet<NetworkConnectionToClient>();
-
         // rebuild observers default method (no AOI) - adds all connections
         static void RebuildObserversDefault(NetworkIdentity identity, bool initialize)
         {
@@ -1597,106 +1592,10 @@ namespace Mirror
             // otherwise let interest management system rebuild
             else
             {
-                RebuildObserversCustom(identity, initialize);
+                aoi.Rebuild(identity, initialize);
             }
         }
 
-        // rebuild observers via interest management system
-        static void RebuildObserversCustom(NetworkIdentity identity, bool initialize)
-        {
-            // clear newObservers hashset before using it
-            newObservers.Clear();
-
-            // not force hidden?
-            if (identity.visible != Visibility.ForceHidden)
-            {
-                aoi.OnRebuildObservers(identity, newObservers);
-            }
-
-            // IMPORTANT: AFTER rebuilding add own player connection in any case
-            // to ensure player always sees himself no matter what.
-            // -> OnRebuildObservers might clear observers, so we need to add
-            //    the player's own connection AFTER. 100% fail safe.
-            // -> fixes https://github.com/vis2k/Mirror/issues/692 where a
-            //    player might teleport out of the ProximityChecker's cast,
-            //    losing the own connection as observer.
-            if (identity.connectionToClient != null)
-            {
-                newObservers.Add(identity.connectionToClient);
-            }
-
-            bool changed = false;
-
-            // add all newObservers that aren't in .observers yet
-            foreach (NetworkConnectionToClient conn in newObservers)
-            {
-                // only add ready connections.
-                // otherwise the player might not be in the world yet or anymore
-                if (conn != null && conn.isReady)
-                {
-                    if (initialize || !identity.observers.ContainsKey(conn.connectionId))
-                    {
-                        // new observer
-                        conn.AddToObserving(identity);
-                        // Debug.Log($"New Observer for {gameObject} {conn}");
-                        changed = true;
-                    }
-                }
-            }
-
-            // remove all old .observers that aren't in newObservers anymore
-            foreach (NetworkConnectionToClient conn in identity.observers.Values)
-            {
-                if (!newObservers.Contains(conn))
-                {
-                    // removed observer
-                    conn.RemoveFromObserving(identity, false);
-                    // Debug.Log($"Removed Observer for {gameObject} {conn}");
-                    changed = true;
-                }
-            }
-
-            // copy new observers to observers
-            if (changed)
-            {
-                identity.observers.Clear();
-                foreach (NetworkConnectionToClient conn in newObservers)
-                {
-                    if (conn != null && conn.isReady)
-                        identity.observers.Add(conn.connectionId, conn);
-                }
-            }
-
-            // special case for host mode: we use SetHostVisibility to hide
-            // NetworkIdentities that aren't in observer range from host.
-            // this is what games like Dota/Counter-Strike do too, where a host
-            // does NOT see all players by default. they are in memory, but
-            // hidden to the host player.
-            //
-            // this code is from UNET, it's a bit strange but it works:
-            // * it hides newly connected identities in host mode
-            //   => that part was the intended behaviour
-            // * it hides ALL NetworkIdentities in host mode when the host
-            //   connects but hasn't selected a character yet
-            //   => this only works because we have no .localConnection != null
-            //      check. at this stage, localConnection is null because
-            //      StartHost starts the server first, then calls this code,
-            //      then starts the client and sets .localConnection. so we can
-            //      NOT add a null check without breaking host visibility here.
-            // * it hides ALL NetworkIdentities in server-only mode because
-            //   observers never contain the 'null' .localConnection
-            //   => that was not intended, but let's keep it as it is so we
-            //      don't break anything in host mode. it's way easier than
-            //      iterating all identities in a special function in StartHost.
-            if (initialize)
-            {
-                if (!newObservers.Contains(localConnection))
-                {
-                    if (aoi != null)
-                        aoi.SetHostVisibility(identity, false);
-                }
-            }
-        }
 
         // broadcasting ////////////////////////////////////////////////////////
         // helper function to get the right serialization for a connection
@@ -1877,16 +1776,9 @@ namespace Mirror
                 // also important for syncInterval=0 components like
                 // NetworkTransform, so they can sync on same interval as time
                 // snapshots _but_ not every single tick.
-                if (!Application.isPlaying ||
-#if !UNITY_2020_3_OR_NEWER
-                    // Unity 2019 doesn't have Time.timeAsDouble yet
-                    AccurateInterval.Elapsed(NetworkTime.localTime, sendInterval, ref lastSendTime))
-#else
-                    AccurateInterval.Elapsed(Time.timeAsDouble, sendInterval, ref lastSendTime))
-#endif
-                {
+                // Unity 2019 doesn't have Time.timeAsDouble yet
+                if (!Application.isPlaying || AccurateInterval.Elapsed(NetworkTime.localTime, sendInterval, ref lastSendTime))
                     Broadcast();
-                }
             }
 
             // process all outgoing messages after updating the world

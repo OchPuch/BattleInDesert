@@ -127,6 +127,8 @@ Library: lib_burst_generated
 --compilation-defines=MIRROR_70_0_OR_NEWER
 --compilation-defines=MIRROR_71_0_OR_NEWER
 --compilation-defines=MIRROR_73_OR_NEWER
+--compilation-defines=MIRROR_78_OR_NEWER
+--compilation-defines=MIRROR_79_OR_NEWER
 --compilation-defines=PACKAGE_PHYSICS
 --compilation-defines=PACKAGE_PHYSICS2D
 --compilation-defines=PACKAGE_TILEMAP
@@ -180,8 +182,6 @@ Library: lib_burst_generated
 --root-assembly=D:\Unity\Projects\BattleInDesert\Temp\StagingArea\Data\Managed\Unity.Services.Core.Threading.dll
 --root-assembly=D:\Unity\Projects\BattleInDesert\Temp\StagingArea\Data\Managed\Unity.2D.Tilemap.Extras.dll
 --root-assembly=D:\Unity\Projects\BattleInDesert\Temp\StagingArea\Data\Managed\Unity.Services.Core.Networking.dll
---root-assembly=D:\Unity\Projects\BattleInDesert\Temp\StagingArea\Data\Managed\MultiplexTransport.dll
---root-assembly=D:\Unity\Projects\BattleInDesert\Temp\StagingArea\Data\Managed\MiddlewareTransport.dll
 --root-assembly=D:\Unity\Projects\BattleInDesert\Temp\StagingArea\Data\Managed\Unity.InternalAPIEngineBridge.001.dll
 --root-assembly=D:\Unity\Projects\BattleInDesert\Temp\StagingArea\Data\Managed\Unity.Services.Core.Configuration.dll
 --root-assembly=D:\Unity\Projects\BattleInDesert\Temp\StagingArea\Data\Managed\Mirror.Authenticators.dll
@@ -320,6 +320,8 @@ Library: lib_burst_generated
 --compilation-defines=MIRROR_70_0_OR_NEWER
 --compilation-defines=MIRROR_71_0_OR_NEWER
 --compilation-defines=MIRROR_73_OR_NEWER
+--compilation-defines=MIRROR_78_OR_NEWER
+--compilation-defines=MIRROR_79_OR_NEWER
 --compilation-defines=PACKAGE_PHYSICS
 --compilation-defines=PACKAGE_PHYSICS2D
 --compilation-defines=PACKAGE_TILEMAP
@@ -373,8 +375,6 @@ Library: lib_burst_generated
 --root-assembly=D:\Unity\Projects\BattleInDesert\Temp\StagingArea\Data\Managed\Unity.Services.Core.Threading.dll
 --root-assembly=D:\Unity\Projects\BattleInDesert\Temp\StagingArea\Data\Managed\Unity.2D.Tilemap.Extras.dll
 --root-assembly=D:\Unity\Projects\BattleInDesert\Temp\StagingArea\Data\Managed\Unity.Services.Core.Networking.dll
---root-assembly=D:\Unity\Projects\BattleInDesert\Temp\StagingArea\Data\Managed\MultiplexTransport.dll
---root-assembly=D:\Unity\Projects\BattleInDesert\Temp\StagingArea\Data\Managed\MiddlewareTransport.dll
 --root-assembly=D:\Unity\Projects\BattleInDesert\Temp\StagingArea\Data\Managed\Unity.InternalAPIEngineBridge.001.dll
 --root-assembly=D:\Unity\Projects\BattleInDesert\Temp\StagingArea\Data\Managed\Unity.Services.Core.Configuration.dll
 --root-assembly=D:\Unity\Projects\BattleInDesert\Temp\StagingArea\Data\Managed\Mirror.Authenticators.dll

@@ -10,8 +10,8 @@ using UnityEditor;
 
 #if UNITY_2021_2_OR_NEWER
 using UnityEditor.SceneManagement;
-#elif UNITY_2018_3_OR_NEWER
-        using UnityEditor.Experimental.SceneManagement;
+#else
+using UnityEditor.Experimental.SceneManagement;
 #endif
 #endif
 
@@ -292,9 +292,12 @@ namespace Mirror
         // BUT internal so tests can add them after creating the NetworkIdentity
         internal void InitializeNetworkBehaviours()
         {
-            // Get all NetworkBehaviours
-            // (never null. GetComponents returns [] if none found)
-            NetworkBehaviours = GetComponents<NetworkBehaviour>();
+            // Get all NetworkBehaviour components, including children.
+            // Some users need NetworkTransform on child bones, etc.
+            // => Deterministic: https://forum.unity.com/threads/getcomponentsinchildren.4582/#post-33983
+            // => Never null. GetComponents returns [] if none found.
+            // => Include inactive. We need all child components.
+            NetworkBehaviours = GetComponentsInChildren<NetworkBehaviour>(true);
             ValidateComponents();
 
             // initialize each one
@@ -347,11 +350,31 @@ namespace Mirror
             hasSpawned = false;
 
 #if UNITY_EDITOR
+            DisallowChildNetworkIdentities();
             SetupIDs();
 #endif
         }
 
 #if UNITY_EDITOR
+        // child NetworkIdentities are not supported.
+        // Disallow them and show an error for the user to fix.
+        // This needs to work for Prefabs & Scene objects, so the previous check
+        // in NetworkClient.RegisterPrefab is not enough.
+        void DisallowChildNetworkIdentities()
+        {
+#if UNITY_2020_3_OR_NEWER
+            NetworkIdentity[] identities = GetComponentsInChildren<NetworkIdentity>(true);
+#else
+            NetworkIdentity[] identities = GetComponentsInChildren<NetworkIdentity>();
+#endif
+            if (identities.Length > 1)
+            {
+                // always log the next child component so it's easy to fix.
+                // if there are multiple, then after removing it'll log the next.
+                Debug.LogError($"'{name}' has another NetworkIdentity component on '{identities[1].name}'. There should only be one NetworkIdentity, and it must be on the root object. Please remove the other one.");
+            }
+        }
+
         void AssignAssetID(string path)
         {
             // only set if not empty. fixes https://github.com/vis2k/Mirror/issues/2765
