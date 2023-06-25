@@ -1,26 +1,28 @@
-using System.Collections;
-using System.Collections.Generic;
 using ScriptableObjects;
 using UnityEngine;
-using UnityEngine.Serialization;
 using UnityEngine.UI;
-using Image = UnityEngine.UIElements.Image;
 
 
-public class CellUi : MonoBehaviour
+namespace UI
 {
-    [HideInInspector]
-    public RawImage Image;
-    [HideInInspector]
-    public LandStructure landStructure;
-
-    private void Awake()
+    public class CellUi : MonoBehaviour
     {
-        Image = GetComponent<RawImage>();
-    }
+        [HideInInspector]
+        public RawImage Image;
+        [HideInInspector]
+        public LandStructure landStructure;
+        [HideInInspector]
+        public LandScapeCell landScapeCell;
+        
+        private void Awake()
+        {
+            Image = GetComponent<RawImage>();
+        }
 
-    public void OnClick()
-    {
-        GridEditor.Instance.ChooseLandStructure(landStructure);
+        public void OnClick()
+        {
+            if (landStructure) GridEditor.Instance.ChooseLandStructure(landStructure);
+            else if (landScapeCell) GridEditor.Instance.ChooseLandScape(landScapeCell);
+        }
     }
 }

@@ -15,18 +15,17 @@ using UnityEngine.UI;
 
 public class GridEditor : MonoBehaviour
 {
-    
     public static GridEditor Instance;
     public LandStructure landStructureToPlace;
+    public LandScapeCell landScapeCellToPlace;
     public GridCell GridCellToChange => PlayerInteraction.SelectedCell;
-    
+
     public int rotationTimes = 0;
-    
+
     public GameObject structurePresentation;
-    
+
     private RawImage _structurePresentationImage;
-    
-    GridManager GridManager;
+
 
     public void Awake()
     {
@@ -34,15 +33,15 @@ public class GridEditor : MonoBehaviour
         {
             Instance = this;
         }
-        else
+        else if (Instance != this)
         {
             Destroy(gameObject);
         }
-        
+
         _structurePresentationImage = structurePresentation.GetComponent<RawImage>();
         structurePresentation.SetActive(false);
     }
-    
+
     public void ChooseLandStructure(LandStructure landStructure)
     {
         if (!landStructure.rotatable)
@@ -53,12 +52,23 @@ public class GridEditor : MonoBehaviour
         {
             rotationTimes = 0;
         }
+
         structurePresentation.SetActive(true);
         structurePresentation.transform.rotation = Quaternion.identity;
         landStructureToPlace = landStructure;
         _structurePresentationImage.texture = landStructure.sprite.texture;
     }
-    
+
+    public void ChooseLandScape(LandScapeCell landScapeCell)
+    {
+        rotationTimes = -1;
+        structurePresentation.SetActive(true);
+        structurePresentation.transform.rotation = Quaternion.identity;
+        landStructureToPlace = null;
+        landScapeCellToPlace = landScapeCell;
+        _structurePresentationImage.texture = landScapeCell.sprite.texture;
+    }
+
     public void DestroyStructure()
     {
         if (PlayerInteraction.SelectedCell)
@@ -74,150 +84,162 @@ public class GridEditor : MonoBehaviour
             }
         }
     }
-    
+
     public void AddRotationRight()
     {
         rotationTimes++;
-        structurePresentation.transform.Rotate(0,0,90);
+        structurePresentation.transform.Rotate(0, 0, 90);
     }
-    
+
     public void SaveGrid()
     {
         var path = OpenFileHelper.GetPathToSaveJsonFile();
-        
+
         if (path == "")
         {
             Debug.Log("You have to choose a path to save a grid");
             return;
         }
-        
-        var json = GridManager.MapToJson(GridManager.gridCells);
-        
+
+        var json = GridManager.MapToJson(GridManager.Instance.gridCells);
+
         //Save to file
         System.IO.File.WriteAllText(path, json);
-        
     }
-    
+
     public void LoadGridFromJson(string path)
     {
         if (path == "")
         {
             path = OpenFileHelper.GetPathToLoadJsonFile();
         }
-        
+
         if (path == "")
         {
             Debug.Log("You have to choose a path to load a grid");
             return;
         }
-        
+
         //Load from file
         string json = System.IO.File.ReadAllText(path);
-        
+
         //Deserialize JSON to grid
         var serializedGridCells = JsonHelper.FromJson<GridCellSerialization>(json);
-        
+
         if (serializedGridCells.Length == 0)
         {
             Debug.Log("Grid is empty");
             return;
         }
-        
+
         //If grid already exists destroy it
-        if (GridManager.gridCells.Count > 0)
+        if (GridManager.Instance.gridCells.Count > 0)
         {
             DestroyGrid();
         }
-        
+
         foreach (var serializedGridCell in serializedGridCells)
         {
-            if (GridManager.gridCells.Count() == GridManager.GridBoundX * GridManager.GridBoundY)
+            if (GridManager.Instance.gridCells.Count() == GridManager.GridBoundX * GridManager.GridBoundY)
             {
                 Debug.Log("Grid is full");
                 break;
             }
+
             serializedGridCell.CreateGridCell();
         }
-        
-        GridManager.GridSuccessfullyGenerated();
-        
+
+        GridManager.Instance.GridSuccessfullyGenerated();
     }
-    
+
     public void LoadGridFromImage()
     {
         var path = OpenFileHelper.GetPathToLoadImageFile();
-        
+
         if (path == "")
         {
             Debug.Log("You have to choose a path to load a grid");
             return;
         }
-        
+
         //Set mapSprite in GridManager to loaded image
-        GridManager.mapTexture = Texture2DHelper.LoadImage(path);
-        
-        if (GridManager.mapTexture == null)
+        GridManager.Instance.mapTexture = Texture2DHelper.LoadImage(path);
+
+        if (GridManager.Instance.mapTexture == null)
         {
             Debug.LogError("Sprite load fail");
             return;
         }
-        
-        if (GridManager.mapTexture.GetRawTextureData() == null)
+
+        if (GridManager.Instance.mapTexture.GetRawTextureData() == null)
         {
             Debug.LogError("Texture load fail");
             return;
         }
-        
+
         //If grid already exists destroy it
-        if (GridManager.gridCells.Count > 0)
+        if (GridManager.Instance.gridCells.Count > 0)
         {
             DestroyGrid();
         }
-        
-        //Generate grid from mapSprite
-        GridManager.GenerateFromImage();
 
+        //Generate grid from mapSprite
+        GridManager.Instance.GenerateFromImage();
     }
-    
+
     public void DestroyGrid()
     {
-        var gridCells = GridManager.gridCells;
+        var gridCells = GridManager.Instance.gridCells;
         //destroy gameobjects
         foreach (var gridCell in gridCells)
         {
             Destroy(gridCell.gameObject);
         }
+
         //clear list
         gridCells.Clear();
-        
+
         Debug.Log("Grid destroyed");
     }
-    
+
     public void PlaceStructure()
     {
-        if (landStructureToPlace == null)
+        if (landStructureToPlace)
         {
-            Debug.Log("You have to choose a structure to place");
-            return;
+            if (!PlayerInteraction.SelectedCell)
+            {
+                Debug.Log("You have to choose a cell to place a structure");
+                return;
+            }
+
+            PlayerInteraction.SelectedCell.SetStructure(landStructureToPlace);
+
+            if (PlayerInteraction.SelectedArea != null)
+            {
+                foreach (var cell in PlayerInteraction.SelectedArea)
+                {
+                    cell.SetStructure(landStructureToPlace);
+                }
+            }
         }
 
-        if (!PlayerInteraction.SelectedCell)
+        if (landScapeCellToPlace)
         {
-            Debug.Log("You have to choose a cell to place a structure");
-            return;
-        }
-        else
-        {
-            PlayerInteraction.SelectedCell.SetStructure(landStructureToPlace);
-        }
-        
-        if (PlayerInteraction.SelectedArea != null)
-        {
-            foreach (var cell in PlayerInteraction.SelectedArea)
+            if (!PlayerInteraction.SelectedCell)
             {
-                cell.SetStructure(landStructureToPlace);
+                Debug.Log("You have to choose a cell to place a structure");
+                return;
+            }
+
+            PlayerInteraction.SelectedCell.SetLandType(landScapeCellToPlace);
+
+            if (PlayerInteraction.SelectedArea != null)
+            {
+                foreach (var cell in PlayerInteraction.SelectedArea)
+                {
+                    cell.SetStructure(landStructureToPlace);
+                }
             }
         }
     }
-    
 }

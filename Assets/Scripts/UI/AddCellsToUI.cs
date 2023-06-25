@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using ScriptableObjects;
+using UI;
 using UnityEngine;
 
 public class AddCellsToUI : MonoBehaviour
@@ -10,11 +11,12 @@ public class AddCellsToUI : MonoBehaviour
     private GameObject cellUiPrefab;
     
     public LandStructure[] landStructures;
+    public LandScapeCell[] landScapes;
     
     public LandStructure.StructureType structureTypeToLoad;
     
-    
-    
+    public bool loadLandScapeInstead = false;
+
     private string GetPathToStructures()
     {
         switch (structureTypeToLoad)
@@ -37,17 +39,42 @@ public class AddCellsToUI : MonoBehaviour
     
     private void Awake()
     {
+        if (loadLandScapeInstead)
+        {
+            LoadLandScapes();
+        }
+        else
+        {
+            LoadStructures();
+        }
+    }
+
+    private void LoadLandScapes()
+    {
+        landScapes = Resources.LoadAll<LandScapeCell>(GetPathToStructures());
+        //Instantiate UI elements for each structure
+        foreach (var landScape in landScapes)
+        {
+            var prefab =Instantiate(cellUiPrefab, transform.position, Quaternion.identity);
+            var cellUiScript = prefab.GetComponent<CellUi>();
+            cellUiScript.Image.texture = landScape.sprite.texture;
+            cellUiScript.landStructure = landScape;
+            prefab.transform.SetParent(transform);
+        }
+    }
+
+    private void LoadStructures()
+    {
         landStructures = Resources.LoadAll<LandStructure>(GetPathToStructures());
         //Instantiate UI elements for each structure
         foreach (var landStructure in landStructures)
         {
-             var nigger =Instantiate(cellUiPrefab, transform.position, Quaternion.identity);
-             var pidoras = nigger.GetComponent<CellUi>();
-             pidoras.Image.texture = landStructure.sprite.texture;
-             pidoras.landStructure = landStructure;
-             nigger.transform.SetParent(transform);
+            var nigger =Instantiate(cellUiPrefab, transform.position, Quaternion.identity);
+            var pidoras = nigger.GetComponent<CellUi>();
+            pidoras.Image.texture = landStructure.sprite.texture;
+            pidoras.landStructure = landStructure;
+            nigger.transform.SetParent(transform);
         }
-        
     }
 }
 

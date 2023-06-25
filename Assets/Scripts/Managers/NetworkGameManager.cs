@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using Managers;
 using Mirror;
+using Multiplayer;
 using UnityEngine;
 
-namespace Multiplayer
+namespace Managers
 {
     public class NetworkGameManager : NetworkManager
     {

@@ -5,7 +5,7 @@ namespace ScriptableObjects
 {
     [CreateAssetMenu(fileName = "New Landscape Cell", menuName = "Cell")]
     [Serializable]
-    public class LandScapeCellSprites : ScriptableObject
+    public class LandScapeCell : ScriptableObject
     {
         [Header("General")]
         public Sprite sprite;

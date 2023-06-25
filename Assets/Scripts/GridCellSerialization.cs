@@ -16,6 +16,7 @@ public class GridCellSerialization
     public String landScapeCellPath;
     public String landStructurePath;
     public float structureRotationTimes;
+    public int teamId;
     
     public GridCellSerialization(GridCell gridCell)
     {
@@ -23,10 +24,11 @@ public class GridCellSerialization
         gridPositionY = gridCell.gridPosition.y;
         structureRotationTimes =
             gridCell.attachedStructure != null ? gridCell.attachedStructure.gameObject.transform.eulerAngles.z  : 0;
-        landScapeCellPath = gridCell.landScapeCellSprites.path;
+        landScapeCellPath = gridCell.landScapeCell.path;
         landStructurePath = gridCell.attachedStructure
             ? gridCell.attachedStructure.landStructure.path
             : "";
+        teamId = gridCell.teamId;
     }
 
     public GridCell CreateGridCell()
@@ -43,14 +45,15 @@ public class GridCellSerialization
         cell.AddComponent<SpriteRenderer>();
         var gridCell = cell.AddComponent<GridCell>();
         gridCell.gridPosition = new Vector2Int(gridPositionX, gridPositionY);
-        gridCell.landScapeCellSprites = Resources.Load<LandScapeCellSprites>(landScapeCellPath);
+        gridCell.landScapeCell = Resources.Load<LandScapeCell>(landScapeCellPath);
         gridCell.transform.parent = GridManager.Instance.transform;
+        gridCell.teamId = teamId;
         return gridCell;
     }
 
     public void CreateStructure()
     {
-        var gridLandscape  = Resources.Load<LandScapeCellSprites>(landScapeCellPath);
+        var gridLandscape  = Resources.Load<LandScapeCell>(landScapeCellPath);
         
         if (landStructurePath == "")
         {

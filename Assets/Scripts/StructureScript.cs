@@ -49,7 +49,7 @@ public class StructureScript : MonoBehaviour, IDamagable
 
         if (!landStructure.drivable)
         {
-            parentGridCell.Walkable = false;
+            parentGridCell.walkable = false;
         }
         else if (landStructure.movementCostSet != 0 )
         {

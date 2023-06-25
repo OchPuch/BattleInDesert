@@ -22,8 +22,8 @@ namespace Managers
         [SerializeField]
         public const int GridBoundY = 256;
 
-        [SerializeField] private LandScapeCellSprites[] landScapeCells;
-        Dictionary<LandScapeCellSprites, Color> _avgLandScapeCellColors = new Dictionary<LandScapeCellSprites, Color>();
+        [SerializeField] private LandScapeCell[] landScapeCells;
+        Dictionary<LandScapeCell, Color> _avgLandScapeCellColors = new Dictionary<LandScapeCell, Color>();
          public Texture2D mapTexture;
          public string mapPath;
 
@@ -39,7 +39,7 @@ namespace Managers
             {
                 Instance = this;
             }
-            else
+            else if (Instance != this)
             {
                 Destroy(gameObject);
             }
@@ -55,15 +55,11 @@ namespace Managers
             }
             
         }
-
         
-
-
         void Start()
         {
             _camera = Camera.main;
         }
-        
         
 
         public void GenerateGridFromJson()
@@ -141,7 +137,6 @@ namespace Managers
 
         public void GenerateFromImage()
         {
-            
             var map = Texture2DHelper.MakeTextureAppropriate(mapTexture, GridBoundX, GridBoundY, 18, 18,
                 TextureFormat.RGB24);
             var mapWidth = map.width / 18; //18 - Pixel width of sprite
@@ -186,7 +181,7 @@ namespace Managers
                     cell = new GameObject();
                     cell.transform.position = cellPosition;
                     cell.AddComponent<SpriteRenderer>();
-                    cell.AddComponent<GridCell>().landScapeCellSprites = closestLandScape;
+                    cell.AddComponent<GridCell>().landScapeCell = closestLandScape;
                     cell.transform.parent = transform;
                 }
             }
@@ -249,7 +244,7 @@ namespace Managers
         
         private int UpdateLandScapeCells()
         {
-            landScapeCells =  Resources.LoadAll<LandScapeCellSprites>("LandScape");
+            landScapeCells =  Resources.LoadAll<LandScapeCell>("LandScape");
             return landScapeCells.Length;
         }
 

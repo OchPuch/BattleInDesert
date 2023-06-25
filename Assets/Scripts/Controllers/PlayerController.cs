@@ -1,9 +1,9 @@
-﻿using System;
-using Managers;
+﻿using Managers;
 using Mirror;
+using Multiplayer;
 using UnityEngine;
 
-namespace Multiplayer
+namespace Controllers
 {
     public class PlayerController : NetworkBehaviour
     {

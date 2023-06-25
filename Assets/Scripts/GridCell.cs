@@ -12,21 +12,22 @@ using UnityEngine.Serialization;
 [System.Serializable]
 public class GridCell : MonoBehaviour
 {
-    [FormerlySerializedAs("landScapeCell")] [SerializeField] public LandScapeCellSprites landScapeCellSprites;
+    [FormerlySerializedAs("landScapeCellSprites")] [SerializeField] public LandScapeCell landScapeCell;
 
     public Vector2Int gridPosition;
     public readonly GridCell[,] AdjacentCells = new GridCell[3, 3]; //Always check for nulls
 
     public UnitScript attachedUnit;
     public StructureScript attachedStructure;
+    
+    public bool walkable = true;
 
-    public bool Walkable = true;
-
-    public HashSet<LandScapeCellSprites.LandType> landType = new HashSet<LandScapeCellSprites.LandType>();
+    public HashSet<LandScapeCell.LandType> landType = new HashSet<LandScapeCell.LandType>();
 
     public float movementCost = 1f;
-
-
+    
+    //Teams
+    public int teamId = -1;
 
     //pathfinding
     public float gCost;
@@ -60,16 +61,16 @@ public class GridCell : MonoBehaviour
     private void Start()
     {
         
-        if (!landScapeCellSprites) {
+        if (!landScapeCell) {
             Destroy(gameObject);
             return;
         }
 
         
         SetPositionByGridCoordinates();
-        movementCost = landScapeCellSprites.movementCost;
-        spriteRenderer.sprite = landScapeCellSprites.sprite;
-        landType.Add(landScapeCellSprites.landType);
+        movementCost = landScapeCell.movementCost;
+        spriteRenderer.sprite = landScapeCell.sprite;
+        landType.Add(landScapeCell.landType);
     }
 
     private void SetPositionByGridCoordinates()
@@ -80,7 +81,7 @@ public class GridCell : MonoBehaviour
 
     public bool IsWalkable(UnitScript walker)
     {
-        if (!Walkable)
+        if (!walkable)
         {
             return false;
         }
@@ -115,13 +116,13 @@ public class GridCell : MonoBehaviour
         {
             switch (land)
             {
-                case LandScapeCellSprites.LandType.Water:
+                case LandScapeCell.LandType.Water:
                     flag = walker.unit.canDriveWater;
                     break;
-                case LandScapeCellSprites.LandType.Land:
+                case LandScapeCell.LandType.Land:
                     flag = walker.unit.canDriveLand;
                     break;
-                case LandScapeCellSprites.LandType.ShallowWater:
+                case LandScapeCell.LandType.ShallowWater:
                     flag = walker.unit.canDriveShallowWater;
                     break;
             }
@@ -217,14 +218,20 @@ public class GridCell : MonoBehaviour
         
     }
 
-    public void RefreshLand()
+    private void RefreshLand()
     {
         landType.Clear();
-        landType.Add(landScapeCellSprites.landType);
-        Walkable = true;
-        movementCost = landScapeCellSprites.movementCost;
-        
+        landType.Add(landScapeCell.landType);
+        walkable = true;
+        movementCost = landScapeCell.movementCost;
     }
+
+    public void SetLandType(LandScapeCell landScapeCell)
+    {
+        this.landScapeCell = landScapeCell;
+        spriteRenderer.sprite = landScapeCell.sprite;
+    }
+    
     
     public void LightUp()
     {
@@ -261,6 +268,11 @@ public class GridCell : MonoBehaviour
         }
 
         spriteRenderer.color = Color.yellow;
+    }
+
+    public bool SameTeamBaseCell(GridCell cell)
+    {
+        return teamId == cell.teamId;
     }
 
     public void SetColor(Color color)
