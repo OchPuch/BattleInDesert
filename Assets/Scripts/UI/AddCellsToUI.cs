@@ -37,6 +37,7 @@ public class AddCellsToUI : MonoBehaviour
     }
     
     
+    
     private void Awake()
     {
         if (loadLandScapeInstead)
@@ -51,14 +52,14 @@ public class AddCellsToUI : MonoBehaviour
 
     private void LoadLandScapes()
     {
-        landScapes = Resources.LoadAll<LandScapeCell>(GetPathToStructures());
+        landScapes = Resources.LoadAll<LandScapeCell>("Landscape");
         //Instantiate UI elements for each structure
         foreach (var landScape in landScapes)
         {
-            var prefab =Instantiate(cellUiPrefab, transform.position, Quaternion.identity);
+            var prefab = Instantiate(cellUiPrefab, transform.position, Quaternion.identity);
             var cellUiScript = prefab.GetComponent<CellUi>();
             cellUiScript.Image.texture = landScape.sprite.texture;
-            cellUiScript.landStructure = landScape;
+            cellUiScript.landScapeCell = landScape;
             prefab.transform.SetParent(transform);
         }
     }

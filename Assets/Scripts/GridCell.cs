@@ -60,13 +60,10 @@ public class GridCell : MonoBehaviour
 
     private void Start()
     {
-        
         if (!landScapeCell) {
             Destroy(gameObject);
             return;
         }
-
-        
         SetPositionByGridCoordinates();
         movementCost = landScapeCell.movementCost;
         spriteRenderer.sprite = landScapeCell.sprite;
@@ -228,8 +225,23 @@ public class GridCell : MonoBehaviour
 
     public void SetLandType(LandScapeCell landScapeCell)
     {
+        //Remove landType from list 
+        foreach (var land in landType)
+        {
+            if (this.landScapeCell.landType == land)
+            {
+                landType.Remove(land);
+                break;
+            }
+        }
+        
+        //Add new landType to list
+        landType.Add(landScapeCell.landType);
         this.landScapeCell = landScapeCell;
         spriteRenderer.sprite = landScapeCell.sprite;
+        movementCost = landScapeCell.movementCost;
+        
+        
     }
     
     

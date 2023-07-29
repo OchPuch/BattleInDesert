@@ -56,6 +56,7 @@ public class GridEditor : MonoBehaviour
         structurePresentation.SetActive(true);
         structurePresentation.transform.rotation = Quaternion.identity;
         landStructureToPlace = landStructure;
+        landScapeCellToPlace = null;
         _structurePresentationImage.texture = landStructure.sprite.texture;
     }
 
@@ -204,7 +205,7 @@ public class GridEditor : MonoBehaviour
 
     public void PlaceStructure()
     {
-        if (landStructureToPlace)
+        if (landStructureToPlace != null)
         {
             if (!PlayerInteraction.SelectedCell)
             {
@@ -214,7 +215,7 @@ public class GridEditor : MonoBehaviour
 
             PlayerInteraction.SelectedCell.SetStructure(landStructureToPlace);
 
-            if (PlayerInteraction.SelectedArea != null)
+            if (PlayerInteraction.SelectedArea.Count > 0)
             {
                 foreach (var cell in PlayerInteraction.SelectedArea)
                 {
@@ -222,22 +223,21 @@ public class GridEditor : MonoBehaviour
                 }
             }
         }
-
-        if (landScapeCellToPlace)
+        else if (landScapeCellToPlace != null)
         {
             if (!PlayerInteraction.SelectedCell)
             {
-                Debug.Log("You have to choose a cell to place a structure");
+                Debug.Log("You have to choose a cell to change its land type");
                 return;
             }
 
             PlayerInteraction.SelectedCell.SetLandType(landScapeCellToPlace);
 
-            if (PlayerInteraction.SelectedArea != null)
+            if (PlayerInteraction.SelectedArea.Count > 0)
             {
                 foreach (var cell in PlayerInteraction.SelectedArea)
                 {
-                    cell.SetStructure(landStructureToPlace);
+                    cell.SetLandType(landScapeCellToPlace);
                 }
             }
         }

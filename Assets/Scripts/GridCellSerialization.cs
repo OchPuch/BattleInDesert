@@ -33,7 +33,6 @@ public class GridCellSerialization
 
     public GridCell CreateGridCell()
     {
-        
         GridManager.GridGenerated += CreateStructure;
         if (GridManager.Instance.gridCells.Count == GridManager.GridBoundX * GridManager.GridBoundY)
         {
