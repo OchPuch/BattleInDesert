@@ -19,14 +19,6 @@ namespace Controllers
         private Vector3 _downLeftBound;
         private Vector3 _upRightBound;
         
-        private void Awake()
-        {
-            if (!editorMode)
-            {
-                GridManager.GridGenerated += SetBounds;
-            }
-        }
-
         private void SetBounds()
         {
             var dlbGrid = GridManager.Instance.GetLeftDownBorder();
@@ -49,6 +41,8 @@ namespace Controllers
             _offset = Vector3.zero;
             _zoom = _camera.orthographicSize;
             _startPos = transform.position;
+            GridManager.GridGenerated += SetBounds;
+            
         }
 
         // Update is called once per frame

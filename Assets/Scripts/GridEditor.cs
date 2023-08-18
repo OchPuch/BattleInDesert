@@ -139,17 +139,29 @@ public class GridEditor : MonoBehaviour
             DestroyGrid();
         }
 
+        GridCell lastCell = null;
+        
         foreach (var serializedGridCell in serializedGridCells)
         {
             if (GridManager.Instance.gridCells.Count() == GridManager.GridBoundX * GridManager.GridBoundY)
             {
                 Debug.Log("Grid is full");
+                GridManager.Instance.gridSize = new Vector2Int(GridManager.GridBoundX, GridManager.GridBoundY);
                 break;
             }
-
-            serializedGridCell.CreateGridCell();
+            
+            lastCell = serializedGridCell.CreateGridCell();
         }
 
+        if (lastCell == null)
+        {
+            Debug.LogError("Grid load fail");
+            return;
+        }
+        
+        
+        GridManager.Instance.gridSize = new Vector2Int(lastCell.gridPosition.x + 1, lastCell.gridPosition.y + 1);
+        Debug.Log(GridManager.Instance.gridSize);
         GridManager.Instance.GridSuccessfullyGenerated();
     }
 

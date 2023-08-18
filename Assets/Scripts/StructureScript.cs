@@ -11,30 +11,26 @@ using UnityEngine.Serialization;
 public class StructureScript : MonoBehaviour, IDamagable
 {
     public LandStructure landStructure;
-    private SpriteRenderer _spriteRenderer;
+    [SerializeField] private SpriteRenderer spriteRenderer;
     public UnitScript hidedUnit;
     public GridCell parentGridCell;
     public float healthPointsLeft;
     
-    private void Awake()
-    {
-        _spriteRenderer = GetComponent<SpriteRenderer>();
-    }
-    
     
     public void Start()
     {
+        
         if (!parentGridCell)
         {
             Destroy(gameObject);
         }
-        if (!_spriteRenderer)
+        if (!spriteRenderer)
         {
-            _spriteRenderer = GetComponent<SpriteRenderer>();
+            spriteRenderer = GetComponent<SpriteRenderer>();
         }
 
         healthPointsLeft = landStructure.health;
-        _spriteRenderer.sprite = landStructure.sprite;
+        spriteRenderer.sprite = landStructure.sprite;
 
         if (landStructure.addedLandType)
         {
@@ -63,8 +59,9 @@ public class StructureScript : MonoBehaviour, IDamagable
         {
             parentGridCell.movementCost *= landStructure.movementCostMultiply;
         }
-
-
+        
+       
+        parentGridCell.attachedStructure = this;
     }
 
     public void TakeDamage(int damage, UnitScript damager)

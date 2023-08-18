@@ -14,7 +14,7 @@ public class GridCell : MonoBehaviour
 {
     [FormerlySerializedAs("landScapeCellSprites")] [SerializeField] public LandScapeCell landScapeCell;
 
-    public Vector2Int gridPosition;
+    public Vector2Int gridPosition = new Vector2Int(-1, -1);
     public readonly GridCell[,] AdjacentCells = new GridCell[3, 3]; //Always check for nulls
 
     public UnitScript attachedUnit;
@@ -37,29 +37,23 @@ public class GridCell : MonoBehaviour
     [HideInInspector]
     public GridCell parent; // Used for pathfinding only
 
-    [SerializeField] private SpriteRenderer spriteRenderer;
-
-    public GridManager GridManager;
+    public SpriteRenderer spriteRenderer;
     
-    private void Awake()
-    {
-        GridManager = GameObject.Find("GridManager").GetComponent<GridManager>();
-        
-        if (spriteRenderer == null)
-        {
-            spriteRenderer = GetComponent<SpriteRenderer>();
-        }
-
-        GridManager.GridGenerated += OnGridGenerated;
-        var position = transform.position;
-        gridPosition = new Vector2Int(Mathf.RoundToInt(position.x / GridManager.CellSize.x),
-            Mathf.RoundToInt(position.y / GridManager.CellSize.y));
-
-        GridManager.AddTile(gameObject);
-    }
+    
 
     private void Start()
     {
+        if (!spriteRenderer) spriteRenderer = GetComponent<SpriteRenderer>();
+        
+        GridManager.GridGenerated += OnGridGenerated;
+        if (gridPosition == new Vector2Int(-1, -1))
+        {
+            var position = transform.position;
+            gridPosition = new Vector2Int(Mathf.RoundToInt(position.x / GridManager.CellSize.x),
+                Mathf.RoundToInt(position.y / GridManager.CellSize.y));
+        }
+        
+        
         if (!landScapeCell) {
             Destroy(gameObject);
             return;
@@ -68,6 +62,8 @@ public class GridCell : MonoBehaviour
         movementCost = landScapeCell.movementCost;
         spriteRenderer.sprite = landScapeCell.sprite;
         landType.Add(landScapeCell.landType);
+        
+        if (!GridManager.Instance.gridCells.Contains(this)) GridManager.Instance.gridCells.Add(this);
     }
 
     private void SetPositionByGridCoordinates()
@@ -131,14 +127,14 @@ public class GridCell : MonoBehaviour
     private void OnGridGenerated()
     {
         AdjacentCells[1, 1] = null;
-        AdjacentCells[0, 0] = GridManager.GetGridCell(new Vector2Int(gridPosition.x - 1, gridPosition.y - 1));
-        AdjacentCells[0, 1] = GridManager.GetGridCell(new Vector2Int(gridPosition.x - 1, gridPosition.y));
-        AdjacentCells[0, 2] = GridManager.GetGridCell(new Vector2Int(gridPosition.x - 1, gridPosition.y + 1));
-        AdjacentCells[1, 0] = GridManager.GetGridCell(new Vector2Int(gridPosition.x, gridPosition.y - 1));
-        AdjacentCells[1, 2] = GridManager.GetGridCell(new Vector2Int(gridPosition.x, gridPosition.y + 1));
-        AdjacentCells[2, 0] = GridManager.GetGridCell(new Vector2Int(gridPosition.x + 1, gridPosition.y - 1));
-        AdjacentCells[2, 1] = GridManager.GetGridCell(new Vector2Int(gridPosition.x + 1, gridPosition.y));
-        AdjacentCells[2, 2] = GridManager.GetGridCell(new Vector2Int(gridPosition.x + 1, gridPosition.y + 1));
+        AdjacentCells[0, 0] = GridManager.Instance.GetGridCell(new Vector2Int(gridPosition.x - 1, gridPosition.y - 1));
+        AdjacentCells[0, 1] = GridManager.Instance.GetGridCell(new Vector2Int(gridPosition.x - 1, gridPosition.y));
+        AdjacentCells[0, 2] = GridManager.Instance.GetGridCell(new Vector2Int(gridPosition.x - 1, gridPosition.y + 1));
+        AdjacentCells[1, 0] = GridManager.Instance.GetGridCell(new Vector2Int(gridPosition.x, gridPosition.y - 1));
+        AdjacentCells[1, 2] = GridManager.Instance.GetGridCell(new Vector2Int(gridPosition.x, gridPosition.y + 1));
+        AdjacentCells[2, 0] = GridManager.Instance.GetGridCell(new Vector2Int(gridPosition.x + 1, gridPosition.y - 1));
+        AdjacentCells[2, 1] = GridManager.Instance.GetGridCell(new Vector2Int(gridPosition.x + 1, gridPosition.y));
+        AdjacentCells[2, 2] = GridManager.Instance.GetGridCell(new Vector2Int(gridPosition.x + 1, gridPosition.y + 1));
     }
 
     public GridCell GetAdjacentCell(Vector2Int direction)

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Controllers;
@@ -13,19 +14,19 @@ namespace Managers
 {
     public class GridManager : MonoBehaviour
     {
+        [SerializeField] private GridCell cellPrefab;
         public static GridManager Instance;
         public Vector2Int gridSize;
         public static readonly Vector2 CellSize = new Vector2(0.18f, 0.18f); //Bounds of sprite
 
-        [SerializeField]
-        public const int GridBoundX = 256;
-        [SerializeField]
-        public const int GridBoundY = 256;
+        [SerializeField] public const int GridBoundX = 256;
+        [SerializeField] public const int GridBoundY = 256;
+
 
         [SerializeField] private LandScapeCell[] landScapeCells;
         Dictionary<LandScapeCell, Color> _avgLandScapeCellColors = new Dictionary<LandScapeCell, Color>();
-         public Texture2D mapTexture;
-         public string mapPath;
+        public Texture2D mapTexture;
+        public string mapPath;
 
         public List<GridCell> gridCells = new List<GridCell>();
         public List<GridCell> lightUpCells = new List<GridCell>();
@@ -35,6 +36,8 @@ namespace Managers
 
         private void Awake()
         {
+            GameData.Init();
+
             if (!Instance)
             {
                 Instance = this;
@@ -48,32 +51,31 @@ namespace Managers
             {
                 Debug.LogError("No LandScapeCells found");
             }
-            
+
             foreach (var landScapeCell in landScapeCells)
             {
-                _avgLandScapeCellColors.Add(landScapeCell, Texture2DHelper.AverageColorWithoutOutliers(landScapeCell.sprite.texture.GetRawTextureData()));
+                _avgLandScapeCellColors.Add(landScapeCell,
+                    Texture2DHelper.AverageColorWithoutOutliers(landScapeCell.sprite.texture.GetRawTextureData()));
             }
-            
         }
-        
+
         void Start()
         {
             _camera = Camera.main;
         }
-        
+
 
         public void GenerateGridFromJson()
         {
-            
             if (mapPath == "")
             {
                 NetworkGameManager.Instance.UpdateState(GameState.ChoosingMap);
                 mapPath = OpenFileHelper.GetPathToLoadJsonFile();
             }
-            
+
             //Load from file
             string json = System.IO.File.ReadAllText(mapPath);
-        
+
             GenerateGridFromJson(json);
         }
 
@@ -83,24 +85,36 @@ namespace Managers
             NetworkGameManager.Instance.UpdateState(GameState.GeneratingMap);
 
             var serializedGridCells = JsonHelper.FromJson<GridCellSerialization>(json);
-        
+
             if (serializedGridCells.Length == 0)
             {
                 Debug.Log("Grid is empty");
                 return;
             }
             
+            GridCell lastCell = null;
+
             foreach (var serializedGridCell in serializedGridCells)
             {
                 if (gridCells.Count() == GridBoundX * GridBoundY)
                 {
+                    
                     Debug.Log("Grid is full");
+                    gridSize = new Vector2Int(GridBoundX, GridBoundY);
                     break;
                 }
-                serializedGridCell.CreateGridCell();
+
+                lastCell = serializedGridCell.CreateGridCell();
             }
-        
-            Instance.GridSuccessfullyGenerated();
+            
+            if (lastCell == null)
+            {
+                Debug.LogError("Grid load fail");
+                return;
+            }
+            
+            gridSize = new Vector2Int(lastCell.gridPosition.x + 1, lastCell.gridPosition.y + 1);
+            GridSuccessfullyGenerated();
         }
 
         public static string MapToJson(List<GridCell> mapCells)
@@ -113,7 +127,7 @@ namespace Managers
 
             var serializedGridCells = new GridCellSerialization[mapCells.Count];
 
-            for(int i = 0; i < mapCells.Count; i++)
+            for (int i = 0; i < mapCells.Count; i++)
             {
                 serializedGridCells[i] = new GridCellSerialization(mapCells[i]);
             }
@@ -128,7 +142,7 @@ namespace Managers
                 for (var y = 0; y < gridSize.y; y++)
                 {
                     var cellPosition = new Vector3(x * CellSize.x, y * CellSize.y);
-                    Instantiate(landScapeCells[0], cellPosition, Quaternion.identity);
+                    Instantiate(GameData.Instance.gridCellPrefab, cellPosition, Quaternion.identity);
                 }
             }
 
@@ -141,6 +155,8 @@ namespace Managers
                 TextureFormat.RGB24);
             var mapWidth = map.width / 18; //18 - Pixel width of sprite
             var mapHeight = map.height / 18; //18 - Pixel height of sprite
+            gridSize = new Vector2Int(mapWidth, mapHeight);
+
             var mapPixels = map.GetRawTextureData();
             for (var y = 0; y < mapHeight; y++)
             {
@@ -160,8 +176,8 @@ namespace Managers
                             mapPixelData[i * 18 * 3 + j * 3 + 2] = mapPixels[index + 2];
                         }
                     }
-                    
-                    GameObject cell = null;
+
+                    GridCell cell = null;
                     int minDifference = 255 * 3 + 1;
                     var closestLandScape = landScapeCells[0];
 
@@ -177,11 +193,14 @@ namespace Managers
                             minDifference = difference;
                         }
                     }
-                    
-                    cell = new GameObject();
-                    cell.transform.position = cellPosition;
-                    cell.AddComponent<SpriteRenderer>();
-                    cell.AddComponent<GridCell>().landScapeCell = closestLandScape;
+
+                    // cell = new GameObject();
+                    // cell.transform.position = cellPosition;
+                    // cell.AddComponent<SpriteRenderer>();
+                    // cell.AddComponent<GridCell>().landScapeCell = closestLandScape;
+                    // cell.transform.parent = transform;
+                    cell = Instantiate(GameData.Instance.gridCellPrefab, cellPosition, Quaternion.identity);
+                    cell.landScapeCell = closestLandScape;
                     cell.transform.parent = transform;
                 }
             }
@@ -191,8 +210,18 @@ namespace Managers
 
         public void GridSuccessfullyGenerated()
         {
+            //Async wait for all cells to call start method
+            StartCoroutine(WaitTillGridGenerated());
+        }
+
+        private IEnumerator WaitTillGridGenerated()
+        {
+            yield return new WaitUntil(() => gridCells.Count == gridSize.x * gridSize.y);
+            Debug.Log("Grid successfully generated");
             GridGenerated?.Invoke();
         }
+
+
         public void DestroyGrid()
         {
             foreach (var cell in gridCells)
@@ -202,6 +231,7 @@ namespace Managers
 
             gridCells.Clear();
         }
+
         public HashSet<GridCell> GetArea(GridCell cell1, GridCell cell2)
         {
             var x1 = cell1.gridPosition.x;
@@ -223,8 +253,8 @@ namespace Managers
 
             return area;
         }
-        
-        public  void LightUpArea(HashSet<GridCell> area)
+
+        public void LightUpArea(HashSet<GridCell> area)
         {
             foreach (var gridCell in area)
             {
@@ -232,19 +262,20 @@ namespace Managers
                 gridCell.LightUp();
             }
         }
-        
-        public  void LightDownArea()
+
+        public void LightDownArea()
         {
             foreach (var gridCell in lightUpCells)
             {
                 gridCell.LightDown();
             }
+
             lightUpCells.Clear();
         }
-        
+
         private int UpdateLandScapeCells()
         {
-            landScapeCells =  Resources.LoadAll<LandScapeCell>("LandScape");
+            landScapeCells = Resources.LoadAll<LandScapeCell>("LandScape");
             return landScapeCells.Length;
         }
 
@@ -254,12 +285,12 @@ namespace Managers
             {
                 return null;
             }
-            
+
             if (gridCells.Count == 0)
             {
                 return null;
             }
-            
+
             var point = _camera.ScreenToWorldPoint(Input.mousePosition);
             var x = Mathf.RoundToInt(point.x / CellSize.x);
             var y = Mathf.RoundToInt(point.y / CellSize.y);
@@ -270,12 +301,7 @@ namespace Managers
 
             return GetGridCell(new Vector2Int(x, y));
         }
-        
-        public void AddTile(GameObject tile)
-        {
-            var gridCell = tile.GetComponent<GridCell>();
-            gridCells.Add(gridCell);
-        }
+
 
         public GridCell GetGridCell(Vector2Int gridPosition)
         {
@@ -297,16 +323,28 @@ namespace Managers
         }
 
         public Vector2Int GetLeftDownBorder()
-        {   
-             return gridCells.First().gridPosition;
+        {
+            if (gridCells.Count != 0)
+            {
+                Debug.Log(gridCells.First().gridPosition);
+
+                return gridCells.First().gridPosition;
+            }
+
+            Debug.Log("Get zeroed bitch");
+            return Vector2Int.zero;
         }
-        
+
         public Vector2Int GetRightUpBorder()
         {
-            return gridCells.Last().gridPosition;
+            if (gridCells.Count != 0)
+            {
+                Debug.Log(gridCells.Last().gridPosition);
+                return gridCells.Last().gridPosition;
+            }
+
+            Debug.Log("Get zeroed bitch");
+            return Vector2Int.zero;
         }
     }
-    
-    
-    
 }

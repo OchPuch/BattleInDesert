@@ -1,5 +1,7 @@
 using ScriptableObjects;
+using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 
@@ -7,16 +9,18 @@ namespace UI
 {
     public class CellUi : MonoBehaviour
     {
-        [HideInInspector]
-        public RawImage Image;
+        [SerializeField]
+        public RawImage image;
         [HideInInspector]
         public LandStructure landStructure;
         [HideInInspector]
         public LandScapeCell landScapeCell;
+        [SerializeField] 
+        private TextMeshProUGUI text;
         
         private void Awake()
         {
-            Image = GetComponent<RawImage>();
+            if (!image) image = GetComponent<RawImage>();
         }
 
         public void OnClick()
@@ -24,5 +28,6 @@ namespace UI
             if (landStructure) GridEditor.Instance.ChooseLandStructure(landStructure);
             else if (landScapeCell) GridEditor.Instance.ChooseLandScape(landScapeCell);
         }
+        
     }
 }

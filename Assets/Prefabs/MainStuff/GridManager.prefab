@@ -45,12 +45,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d9f64b08148a4ed47a170a5843ea4b0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  cellPrefab: {fileID: 360343152079649809, guid: fa24127ba02d87e4fa4cabbe8573c76a, type: 3}
   gridSize: {x: 0, y: 0}
   landScapeCells: []
   mapTexture: {fileID: 0}
   mapPath: 
-  GridCells: []
-  LightUpCells: []
+  gridCells: []
+  lightUpCells: []
 --- !u!114 &8186193579964361013
 MonoBehaviour:
   m_ObjectHideFlags: 0

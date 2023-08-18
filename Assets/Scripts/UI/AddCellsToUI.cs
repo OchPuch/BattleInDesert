@@ -58,7 +58,7 @@ public class AddCellsToUI : MonoBehaviour
         {
             var prefab = Instantiate(cellUiPrefab, transform.position, Quaternion.identity);
             var cellUiScript = prefab.GetComponent<CellUi>();
-            cellUiScript.Image.texture = landScape.sprite.texture;
+            cellUiScript.image.texture = landScape.sprite.texture;
             cellUiScript.landScapeCell = landScape;
             prefab.transform.SetParent(transform);
         }
@@ -72,7 +72,7 @@ public class AddCellsToUI : MonoBehaviour
         {
             var nigger =Instantiate(cellUiPrefab, transform.position, Quaternion.identity);
             var pidoras = nigger.GetComponent<CellUi>();
-            pidoras.Image.texture = landStructure.sprite.texture;
+            pidoras.image.texture = landStructure.sprite.texture;
             pidoras.landStructure = landStructure;
             nigger.transform.SetParent(transform);
         }
