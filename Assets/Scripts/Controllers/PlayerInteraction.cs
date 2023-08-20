@@ -75,7 +75,7 @@ namespace Controllers
                     case InteractionState.Chilling:
                         CurrentState = InteractionState.CellSelected;
                         SelectedCell = cell;
-                        SelectedArea.Add(SelectedCell);
+                        SelectedArea.Add(cell);
                         selectedObject.SetActive(true);
                         selectedObject.transform.position = cell.transform.position;
                         if (cell.attachedUnit)

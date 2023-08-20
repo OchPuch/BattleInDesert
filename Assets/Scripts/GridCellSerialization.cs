@@ -50,7 +50,7 @@ public class GridCellSerialization
             Quaternion.identity);
         cell.gridPosition = new Vector2Int(gridPositionX, gridPositionY);
         cell.landScapeCell = Resources.Load<LandScapeCell>(landScapeCellPath);
-        cell.transform.parent = GridManager.Instance.transform;
+        cell.transform.SetParent( GridManager.Instance.transform);
         cell.teamId = teamId;
         
 

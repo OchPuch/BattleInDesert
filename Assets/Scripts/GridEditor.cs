@@ -26,6 +26,7 @@ public class GridEditor : MonoBehaviour
 
     private RawImage _structurePresentationImage;
 
+    public Action OnGridDestroyed;
 
     public void Awake()
     {
@@ -94,6 +95,8 @@ public class GridEditor : MonoBehaviour
 
     public void SaveGrid()
     {
+        if (!TeamAssigner.Instance.AllTeamsAreOk("Saving grid")) return;
+        
         var path = OpenFileHelper.GetPathToSaveJsonFile();
 
         if (path == "")
@@ -210,7 +213,8 @@ public class GridEditor : MonoBehaviour
 
         //clear list
         gridCells.Clear();
-
+        
+        OnGridDestroyed?.Invoke();
         Debug.Log("Grid destroyed");
     }
 
