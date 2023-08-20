@@ -326,12 +326,9 @@ namespace Managers
         {
             if (gridCells.Count != 0)
             {
-                Debug.Log(gridCells.First().gridPosition);
-
                 return gridCells.First().gridPosition;
             }
 
-            Debug.Log("Get zeroed bitch");
             return Vector2Int.zero;
         }
 
@@ -339,11 +336,9 @@ namespace Managers
         {
             if (gridCells.Count != 0)
             {
-                Debug.Log(gridCells.Last().gridPosition);
                 return gridCells.Last().gridPosition;
             }
 
-            Debug.Log("Get zeroed bitch");
             return Vector2Int.zero;
         }
     }

@@ -50,7 +50,6 @@ namespace Controllers
 
         public void Awake()
         {
-            
             Instance = this;
             selectedObject.SetActive(false);
             targetObject.SetActive(false);
@@ -214,6 +213,7 @@ namespace Controllers
             TargetUnit = null;
             targetObject.SetActive(false);
             OnUnitDeselected?.Invoke();
+            
         }
     }
 }

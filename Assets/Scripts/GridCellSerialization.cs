@@ -87,7 +87,6 @@ public class GridCellSerialization
 
         newStructure.landStructure = structure;
         newStructure.parentGridCell = GridManager.Instance.GetGridCell(new Vector2Int(gridPositionX, gridPositionY));
-        Debug.Log(gridPositionX + " " + gridPositionY);
         
         
         var transform1 = newStructure.parentGridCell.transform;

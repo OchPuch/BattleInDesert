@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 2363084740026437109}
   - component: {fileID: 5990125624661608355}
   m_Layer: 5
-  m_Name: CellCostPopUp
+  m_Name: CellCostPopUp(obsolete)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

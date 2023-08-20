@@ -14,3 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gridCellPrefab: {fileID: 360343152079649809, guid: fa24127ba02d87e4fa4cabbe8573c76a, type: 3}
   structurePrefab: {fileID: 2496669219870139187, guid: 23462264632fb1840acdb194410cfc72, type: 3}
+  cellPopUpPrefab: {fileID: 4943648082592918268, guid: d9a53aa7c7e6e574aad6a780c9e88b9b, type: 3}
+  errorPopUpPrefab: {fileID: -5530733088789449137, guid: 7c37f9913d8c8bf4eb11742b587f87c9, type: 3}

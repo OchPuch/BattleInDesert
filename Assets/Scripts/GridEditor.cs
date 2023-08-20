@@ -161,7 +161,6 @@ public class GridEditor : MonoBehaviour
         
         
         GridManager.Instance.gridSize = new Vector2Int(lastCell.gridPosition.x + 1, lastCell.gridPosition.y + 1);
-        Debug.Log(GridManager.Instance.gridSize);
         GridManager.Instance.GridSuccessfullyGenerated();
     }
 
