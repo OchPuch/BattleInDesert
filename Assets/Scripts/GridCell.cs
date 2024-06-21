@@ -83,12 +83,11 @@ public class GridCell : MonoBehaviour
         {
             return false;
         }
-
-
-        if (attachedStructure)
+        
+        if ((attachedStructure != null) && attachedStructure.landStructure.canBeDrivenOnlyBy.Length > 0)
         {
             var inDrivers = false;
-            foreach (var driver in attachedStructure.landStructure.canBeDrivenBy)
+            foreach (var driver in attachedStructure.landStructure.canBeDrivenOnlyBy)
             {
                 if (driver == walker.unit)
                 {

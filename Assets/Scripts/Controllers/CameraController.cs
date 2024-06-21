@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Managers;
 using UnityEngine;
@@ -42,7 +43,11 @@ namespace Controllers
             _zoom = _camera.orthographicSize;
             _startPos = transform.position;
             GridManager.GridGenerated += SetBounds;
-            
+        }
+
+        private void OnDestroy()
+        {
+            GridManager.GridGenerated -= SetBounds;
         }
 
         // Update is called once per frame

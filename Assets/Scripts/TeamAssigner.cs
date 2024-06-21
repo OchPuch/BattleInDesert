@@ -29,6 +29,11 @@ public class TeamAssigner : MonoBehaviour
         GridEditor.Instance.OnGridDestroyed += OnGridDestroyed;
     }
 
+    private void OnDestroy()
+    {
+        GridManager.GridGenerated -= InitShowingUI;
+    }
+
     public void SpawnUI()
     {
         if (PlayerInteraction.SelectedArea.Count > 1)

@@ -20,7 +20,7 @@ namespace ScriptableObjects
         public int health;
         [Header("Movement")]
         public bool drivable;
-        public Unit[] canBeDrivenBy; //If 0, can be driven by any unit
+        public Unit[] canBeDrivenOnlyBy; //If 0, can be driven by any unit
         public bool settedLandType;
         public LandScapeCell.LandType setLandType;
         public bool addedLandType;

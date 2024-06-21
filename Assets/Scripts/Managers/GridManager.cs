@@ -65,21 +65,23 @@ namespace Managers
         }
 
 
-        public void GenerateGridFromJson()
+        public bool GenerateGridFromJson()
         {
             if (mapPath == "")
             {
                 NetworkGameManager.Instance.UpdateState(GameState.ChoosingMap);
                 mapPath = OpenFileHelper.GetPathToLoadJsonFile();
+                if (string.IsNullOrEmpty(mapPath))
+                    return false;
             }
 
             //Load from file
             string json = System.IO.File.ReadAllText(mapPath);
 
-            GenerateGridFromJson(json);
+            return GenerateGridFromJson(json);
         }
 
-        public void GenerateGridFromJson(string json)
+        public bool GenerateGridFromJson(string json)
         {
             //Deserialize JSON to grid
             NetworkGameManager.Instance.UpdateState(GameState.GeneratingMap);
@@ -89,7 +91,7 @@ namespace Managers
             if (serializedGridCells.Length == 0)
             {
                 Debug.Log("Grid is empty");
-                return;
+                return false;
             }
             
             GridCell lastCell = null;
@@ -110,11 +112,12 @@ namespace Managers
             if (lastCell == null)
             {
                 Debug.LogError("Grid load fail");
-                return;
+                return false;
             }
             
             gridSize = new Vector2Int(lastCell.gridPosition.x + 1, lastCell.gridPosition.y + 1);
             GridSuccessfullyGenerated();
+            return true;
         }
 
         public static string MapToJson(List<GridCell> mapCells)

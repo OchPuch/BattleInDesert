@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using Managers;
 using Mirror;
-using Multiplayer;
 using UnityEngine;
 
-namespace Managers
+namespace Multiplayer
 {
     public class NetworkGameManager : NetworkManager
     {
@@ -27,8 +27,6 @@ namespace Managers
             }
             
             GridManager.GridGenerated += OnGridGenerated;
-            
-            
         }
 
         public static void SendMapToClient(NetworkConnection conn, List<GridCell> map)
@@ -39,6 +37,7 @@ namespace Managers
                 if (map.Count == 0)
                 {
                     Debug.LogError("Map is empty");
+                    conn.Disconnect();
                     return;
                 }
             }
@@ -73,12 +72,15 @@ namespace Managers
         public override void OnServerAddPlayer(NetworkConnectionToClient conn)
         {
             base.OnServerAddPlayer(conn);
-            Debug.LogError("Bruh"); 
             
             if (conn.identity.isLocalPlayer)
             {
                 Debug.Log("Host joined");
-                GridManager.Instance.GenerateGridFromJson();
+
+                if (!GridManager.Instance.GenerateGridFromJson())
+                {
+                    StopHost();
+                }
             }
             else
             {
@@ -86,7 +88,6 @@ namespace Managers
                 SendMapToClient(conn, GridManager.Instance.gridCells);
             }
             
-
         }
 
         public void LockRoom()

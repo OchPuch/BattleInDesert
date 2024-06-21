@@ -21,7 +21,7 @@ MonoBehaviour:
   destructible: 0
   health: 0
   drivable: 1
-  canBeDrivenBy: []
+  canBeDrivenOnlyBy: []
   settedLandType: 0
   setLandType: 0
   addedLandType: 0
@@ -32,3 +32,4 @@ MonoBehaviour:
   canShootThrough: 1
   canHideInside: 0
   canHideThere: {fileID: 0}
+  path: Structures/Asphalt_Road/Road_Turn
